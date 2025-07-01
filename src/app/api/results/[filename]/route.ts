@@ -34,9 +34,27 @@ export async function GET(
 
   try {
     const fileContent = await fs.readFile(filePath, 'utf-8');
+    
+    let downloadFilename = filename;
+    // Filename format on disk: {pollId(36)}-{title}-{timestamp(19)}.md
+    // We want the downloaded filename to be: {title}-{timestamp}.md
+    const pollIdLength = 36;
+    const timestampLength = 19;
+    const extensionLength = 3; // .md
+    // 2 for the hyphens around the title
+    const minLength = pollIdLength + 1 + 1 + timestampLength + 1 + extensionLength;
+
+    if (filename.length >= minLength) {
+        // Extract title which is between the pollId and the timestamp
+        const title = filename.substring(pollIdLength + 1, filename.length - timestampLength - 1 - extensionLength);
+        // Extract timestamp
+        const timestamp = filename.substring(filename.length - timestampLength - extensionLength, filename.length - extensionLength);
+        downloadFilename = `${title}-${timestamp}.md`;
+    }
+
     const headers = new Headers();
     headers.set('Content-Type', 'text/markdown; charset=utf-8');
-    headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+    headers.set('Content-Disposition', `attachment; filename="${downloadFilename}"`);
     return new NextResponse(fileContent, { status: 200, headers });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -40,6 +40,34 @@ function ResultFileList({ files }: { files: string[] }) {
   const { toast } = useToast();
   const [isDeleting, startDeleting] = useTransition();
 
+  const getDisplayDate = (filename: string): string => {
+    const match = filename.match(/(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})\.md$/);
+    if (!match) return filename;
+
+    const timestampStr = match[1];
+    const parts = timestampStr.split(/[-T]/);
+    if (parts.length < 6) return filename;
+
+    const date = new Date(
+      parseInt(parts[0], 10),
+      parseInt(parts[1], 10) - 1, // Month is 0-indexed
+      parseInt(parts[2], 10),
+      parseInt(parts[3], 10),
+      parseInt(parts[4], 10),
+      parseInt(parts[5], 10)
+    );
+
+    if (isNaN(date.getTime())) return filename;
+
+    return date.toLocaleString('it-IT', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+  }
+
   const handleDelete = (filename: string) => {
     startDeleting(async () => {
       const response = await fetch(`/api/results/${encodeURIComponent(filename)}`, {
@@ -72,7 +100,7 @@ function ResultFileList({ files }: { files: string[] }) {
         <li key={file} className="flex items-center justify-between p-2 rounded-md border bg-background">
           <div className="flex items-center gap-3 font-mono text-sm text-muted-foreground overflow-hidden">
             <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="truncate" title={file}>{file}</span>
+            <span className="truncate" title={file}>{getDisplayDate(file)}</span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button asChild size="sm" variant="ghost">
@@ -245,7 +273,7 @@ export function PollList({ polls, activePollId }: PollListProps) {
                         <ShareLinkButton username={activePoll.owner} />
                         <Button onClick={handleArchive} variant="outline" size="sm" disabled={isArchiving}>
                             {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Salva Risultati
+                            Archivia Risultati
                         </Button>
                     </div>
                 </div>
