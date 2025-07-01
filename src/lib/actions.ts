@@ -422,6 +422,23 @@ export async function getResultsFiles(username: string): Promise<string[]> {
   }
 }
 
+export async function archiveCurrentPollResults(username: string): Promise<{ success: boolean; error?: string; filename?: string }> {
+    try {
+        const poll = await getPoll(username);
+        if (!poll) {
+            return { success: false, error: 'Nessun sondaggio attivo da archiviare.' };
+        }
+        
+        const filename = await archivePollResults(poll, 'updated');
+        
+        return { success: true, filename };
+    } catch (e) {
+        const error = e as Error;
+        console.error(`archiveCurrentPollResults failed for user ${username}:`, error);
+        return { success: false, error: error.message || 'Impossibile archiviare i risultati.' };
+    }
+}
+
 // --- Profile Actions ---
 
 export async function changeUsernameAction(prevState: any, formData: FormData) {

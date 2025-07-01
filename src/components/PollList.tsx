@@ -4,7 +4,7 @@ import type { Poll } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { activatePoll, deactivatePoll, deletePoll } from '@/lib/actions';
+import { activatePoll, deactivatePoll, deletePoll, archiveCurrentPollResults } from '@/lib/actions';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -204,6 +204,29 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
 
 export function PollList({ polls, activePollId }: PollListProps) {
   const activePoll = polls.find(p => p.id === activePollId);
+  const [isArchiving, startArchiving] = useTransition();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleArchive = () => {
+    if (!activePoll) return;
+    startArchiving(async () => {
+        const result = await archiveCurrentPollResults(activePoll.owner);
+        if (result.success && result.filename) {
+            toast({
+                title: 'Successo!',
+                description: `I risultati sono stati archiviati come "${result.filename}".`,
+            });
+            router.refresh();
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Errore',
+                description: result.error || 'Impossibile archiviare i risultati.',
+            });
+        }
+    });
+  };
 
   return (
     <div className="p-2 sm:p-4">
@@ -220,11 +243,9 @@ export function PollList({ polls, activePollId }: PollListProps) {
                             </Link>
                         </Button>
                         <ShareLinkButton username={activePoll.owner} />
-                        <Button asChild variant="outline" size="sm">
-                            <a href="/api/results/current" download>
-                                <Download className="mr-2 h-4 w-4" />
-                                Risultati Live
-                            </a>
+                        <Button onClick={handleArchive} variant="outline" size="sm" disabled={isArchiving}>
+                            {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Archivia Risultati
                         </Button>
                     </div>
                 </div>
