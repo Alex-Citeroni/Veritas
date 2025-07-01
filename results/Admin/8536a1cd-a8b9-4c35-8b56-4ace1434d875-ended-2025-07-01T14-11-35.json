@@ -1,72 +1,65 @@
 {
-  "id": "8536a1cd-a8b9-4c35-8b56-4ace1434d875",
+  "pollId": "8536a1cd-a8b9-4c35-8b56-4ace1434d875",
   "title": "Provaimo",
   "owner": "Admin",
-  "isActive": true,
+  "timestamp": "2025-07-01T14:11:35.265Z",
+  "status": "ended",
   "questions": [
     {
-      "id": 0,
-      "text": "Prima domanda",
-      "answers": [
+      "question": "Prima domanda",
+      "results": [
         {
-          "id": 0,
           "text": "Risposta 1",
           "votes": 1
         },
         {
-          "id": 1,
           "text": "Risposta 2",
           "votes": 0
         }
-      ]
+      ],
+      "totalVotes": 1
     },
     {
-      "id": 1,
-      "text": "Doamnde",
-      "answers": [
+      "question": "Doamnde",
+      "results": [
         {
-          "id": 0,
           "text": "sad",
           "votes": 0
         },
         {
-          "id": 1,
           "text": "das",
           "votes": 1
         }
-      ]
+      ],
+      "totalVotes": 1
     },
     {
-      "id": 2,
-      "text": "Troppe domande",
-      "answers": [
+      "question": "Troppe domande",
+      "results": [
         {
-          "id": 0,
           "text": "21",
           "votes": 1
         },
         {
-          "id": 1,
           "text": "3",
           "votes": 1
         }
-      ]
+      ],
+      "totalVotes": 2
     },
     {
-      "id": 3,
-      "text": "Eccoloe",
-      "answers": [
+      "question": "Eccoloe",
+      "results": [
         {
-          "id": 0,
           "text": "321",
           "votes": 0
         },
         {
-          "id": 1,
           "text": "41",
           "votes": 2
         }
-      ]
+      ],
+      "totalVotes": 2
     }
   ]
 }

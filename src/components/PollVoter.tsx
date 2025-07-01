@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { getPoll, submitVote } from '@/lib/actions';
 import type { Poll, Question } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CheckCircle, BarChart2, HelpCircle, ShieldCheck, Sparkles } from 'lucide-react';
@@ -53,11 +53,11 @@ function PollQuestion({
                     return (
                         <div key={answer.id} className="relative w-full h-12 rounded-lg bg-muted overflow-hidden border">
                             <div
-                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-lg ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
+                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-lg ${isUserChoice ? 'bg-primary' : 'bg-secondary'}`}
                                 style={{ width: `${percentage}%` }}
                             />
                              <div 
-                                className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary"
+                                className="absolute inset-0 flex items-center justify-between px-4 font-medium text-secondary-foreground"
                             >
                                 <div className="flex items-center gap-2">
                                      <CheckCircle className="h-5 w-5 text-transparent" />
@@ -67,11 +67,11 @@ function PollQuestion({
                             </div>
                             {isUserChoice && (
                                 <div
-                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-accent-foreground"
+                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
                                     style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-accent-foreground" />
+                                        <CheckCircle className="h-5 w-5 text-primary-foreground" />
                                         <span>{answer.text}</span>
                                     </div>
                                     <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
