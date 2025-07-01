@@ -108,13 +108,15 @@ export function PollForm({ currentPoll }: PollFormProps) {
     control: form.control,
     name: 'questions',
   });
+  
+  const hasActivePoll = !!currentPoll?.title;
 
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
-      const result = await createPoll(data);
-      if (result.error) {
+      const result = await createPoll(data, hasActivePoll);
+      if (result?.error) {
         toast({ variant: 'destructive', title: 'Errore', description: result.error });
-      } else {
+      } else if (result?.success) {
         toast({ title: 'Successo', description: result.success });
       }
     });
@@ -131,8 +133,6 @@ export function PollForm({ currentPoll }: PollFormProps) {
       }
     });
   };
-
-  const hasActivePoll = !!currentPoll?.title;
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">

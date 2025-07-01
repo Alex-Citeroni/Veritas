@@ -1,4 +1,21 @@
 {
-  "title": null,
-  "questions": []
+  "title": "Prova",
+  "questions": [
+    {
+      "id": 0,
+      "text": "Ecco una bellissima domanda",
+      "answers": [
+        {
+          "id": 0,
+          "text": "Si",
+          "votes": 1
+        },
+        {
+          "id": 1,
+          "text": "No",
+          "votes": 1
+        }
+      ]
+    }
+  ]
 }

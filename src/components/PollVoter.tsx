@@ -53,15 +53,15 @@ function PollQuestion({
                     return (
                     <div key={answer.id} className="relative w-full h-12 rounded-md bg-secondary overflow-hidden border border-border">
                         <div
-                        className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/80'}`}
+                        className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
                         style={{ width: `${percentage}%` }}
                         />
-                        <div className="absolute inset-0 flex items-center justify-between px-4 font-medium">
-                            <div className={`flex items-center gap-2 ${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>
-                                {isUserChoice && <CheckCircle className="h-5 w-5" />}
+                        <div className="absolute inset-0 flex items-center justify-between px-4 font-medium text-secondary-foreground">
+                            <div className="flex items-center gap-2">
+                                {isUserChoice && <CheckCircle className="h-5 w-5 text-primary" />}
                                 <span>{answer.text}</span>
                             </div>
-                            <span className={`${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                            <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                         </div>
                     </div>
                     );

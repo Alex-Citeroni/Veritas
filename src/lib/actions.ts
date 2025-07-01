@@ -72,7 +72,7 @@ export async function logout() {
   redirect('/admin');
 }
 
-export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }) {
+export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean) {
   const { title, questions } = data;
 
   if (!title || questions.length < 1) {
@@ -106,7 +106,12 @@ export async function createPoll(data: { title: string; questions: { text: strin
 
   revalidatePath('/');
   revalidatePath('/admin');
-  return { success: 'Sondaggio creato/aggiornato con successo!' };
+  
+  if (!isUpdate) {
+    redirect('/');
+  }
+
+  return { success: 'Sondaggio aggiornato con successo!' };
 }
 
 export async function getPoll(): Promise<Poll> {
