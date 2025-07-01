@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Sondiamo',
-  description: 'Crea e partecipa a sondaggi interattivi in tempo reale.',
+  title: 'Veritas',
+  description: 'Veritas - Sondaggi interattivi per la verità.',
 };
 
 export default function RootLayout({

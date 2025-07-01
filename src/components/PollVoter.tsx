@@ -6,7 +6,7 @@ import type { Poll, Question } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, BarChart2, HelpCircle } from 'lucide-react';
+import { Loader2, CheckCircle, BarChart2, HelpCircle, ShieldCheck, Sparkles } from 'lucide-react';
 
 function PollQuestion({
   question,
@@ -113,18 +113,35 @@ export function PollVoter() {
   useEffect(() => {
     if (poll?.title) {
         try {
-            const storedVotes = localStorage.getItem(`voted_${poll.title}`);
-            if(storedVotes) {
-                setVotedAnswers(JSON.parse(storedVotes));
+            const storedVotesRaw = localStorage.getItem(`voted_${poll.title}`);
+            if (storedVotesRaw) {
+                const votes = JSON.parse(storedVotesRaw);
+                
+                const questionIdsInStorage = Object.keys(votes).map(Number);
+                const allQuestionsValid = questionIdsInStorage.every(qId => {
+                    const question = poll.questions.find(q => q.id === qId);
+                    if (!question) return false;
+                    const answerId = votes[qId];
+                    return question.answers.some(a => a.id === answerId);
+                });
+
+                if (allQuestionsValid) {
+                    setVotedAnswers(votes);
+                } else {
+                    setVotedAnswers({});
+                    localStorage.removeItem(`voted_${poll.title}`);
+                }
             } else {
                 setVotedAnswers({});
             }
         } catch (error) {
-            console.error("Failed to read from localStorage", error);
+            console.error("Failed to read or parse from localStorage", error);
             setVotedAnswers({});
         }
+    } else {
+        setVotedAnswers({});
     }
-  }, [poll?.title]);
+  }, [poll]);
 
   const handleVote = (questionId: number, answerId: number) => {
     if (!poll?.title) return;
@@ -167,21 +184,29 @@ export function PollVoter() {
 
   if (!poll.title) {
     return (
-      <Card className="w-full max-w-2xl mx-auto text-center shadow-lg">
-        <CardHeader>
-          <CardTitle>Nessun Sondaggio Attivo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">L'amministratore non ha ancora avviato un sondaggio. Attendi!</p>
-        </CardContent>
-      </Card>
+       <div className="text-center">
+        <div className="flex items-center justify-center gap-4 mb-4">
+            <ShieldCheck className="w-16 h-16 text-primary" />
+            <h1 className="text-6xl font-bold text-primary">Veritas</h1>
+        </div>
+        <p className="text-xl text-muted-foreground">Sondaggi interattivi per la verità.</p>
+      </div>
     );
   }
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-2 text-primary">{poll.title}</h2>
-        <p className="text-center text-muted-foreground mb-8">I risultati si aggiornano in tempo reale. Puoi votare per ogni domanda.</p>
+        <header className="absolute top-4 left-4 flex items-center gap-2 text-lg font-semibold">
+          <ShieldCheck className="h-6 w-6 text-primary" />
+          <span>Veritas</span>
+        </header>
+        
+        <div className="text-center">
+            <Sparkles className="w-16 h-16 text-primary mx-auto" />
+            <h1 className="text-4xl font-bold mt-2 mb-2 text-primary">{poll.title}</h1>
+            <p className="text-center text-muted-foreground mb-8">I risultati si aggiornano in tempo reale. Puoi votare per ogni domanda.</p>
+        </div>
+
         {poll.questions.map((question) => (
             <PollQuestion 
                 key={question.id}

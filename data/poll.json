@@ -1,5 +1,5 @@
 {
-  "title": "Sondaggio su di noi",
+  "title": "Sondaggio di Esempio",
   "questions": [
     {
       "id": 0,
@@ -8,28 +8,12 @@
         {
           "id": 0,
           "text": "Si",
-          "votes": 2
-        },
-        {
-          "id": 1,
-          "text": "No",
-          "votes": 0
-        }
-      ]
-    },
-    {
-      "id": 1,
-      "text": "E' proprio una bella applicazione?",
-      "answers": [
-        {
-          "id": 0,
-          "text": "Si",
           "votes": 0
         },
         {
           "id": 1,
           "text": "No",
-          "votes": 2
+          "votes": 0
         }
       ]
     }
