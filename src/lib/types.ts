@@ -4,7 +4,13 @@ export interface Answer {
   votes: number;
 }
 
-export interface Poll {
-  question: string | null;
+export interface Question {
+  id: number;
+  text: string;
   answers: Answer[];
+}
+
+export interface Poll {
+  title: string | null;
+  questions: Question[];
 }

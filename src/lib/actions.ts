@@ -22,7 +22,7 @@ async function ensurePollFile() {
   try {
     await fs.access(pollFilePath);
   } catch {
-    await fs.writeFile(pollFilePath, JSON.stringify({ question: null, answers: [] }), 'utf-8');
+    await fs.writeFile(pollFilePath, JSON.stringify({ title: null, questions: [] }), 'utf-8');
   }
 }
 
@@ -30,9 +30,13 @@ async function getPollData(): Promise<Poll> {
   await ensurePollFile();
   try {
     const pollData = await fs.readFile(pollFilePath, 'utf-8');
-    return JSON.parse(pollData);
+    const parsedData = JSON.parse(pollData);
+    if ('question' in parsedData) {
+        return { title: null, questions: [] };
+    }
+    return parsedData;
   } catch (error) {
-    return { question: null, answers: [] };
+    return { title: null, questions: [] };
   }
 }
 
@@ -41,20 +45,28 @@ async function writePollData(poll: Poll) {
   await fs.writeFile(pollFilePath, JSON.stringify(poll, null, 2), 'utf-8');
 }
 
-export async function createPoll(formData: FormData) {
-  const question = formData.get('question') as string;
-  const answers = formData.getAll('answers[]') as string[];
+export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }) {
+  const { title, questions } = data;
 
-  if (!question || answers.length < 2 || answers.some(a => a.trim() === '')) {
-    return { error: 'Question and at least two non-empty answers are required.' };
+  if (!title || questions.length < 1) {
+    return { error: 'A title and at least one question are required.' };
+  }
+  for (const q of questions) {
+    if (!q.text || q.answers.length < 2 || q.answers.some(a => !a.text.trim())) {
+        return { error: 'Each question must have text and at least two non-empty answers.' };
+    }
   }
 
   const newPoll: Poll = {
-    question,
-    answers: answers.filter(a => a.trim() !== '').map((answer, index) => ({
-      id: index,
-      text: answer,
-      votes: 0,
+    title,
+    questions: questions.map((question, qIndex) => ({
+      id: qIndex,
+      text: question.text,
+      answers: question.answers.map((answer, aIndex) => ({
+        id: aIndex,
+        text: answer.text,
+        votes: 0,
+      })),
     })),
   };
 
@@ -69,11 +81,14 @@ export async function getPoll(): Promise<Poll> {
   return await getPollData();
 }
 
-export async function submitVote(answerId: number) {
+export async function submitVote(questionId: number, answerId: number) {
   const poll = await getPollData();
-  if (!poll.question) return { error: 'No active poll.' };
+  if (!poll.title) return { error: 'No active poll.' };
 
-  const answer = poll.answers.find(a => a.id === answerId);
+  const question = poll.questions.find(q => q.id === questionId);
+  if (!question) return { error: 'Invalid question.' };
+  
+  const answer = question.answers.find(a => a.id === answerId);
   if (answer) {
     answer.votes += 1;
     await writePollData(poll);
@@ -86,21 +101,24 @@ export async function submitVote(answerId: number) {
 export async function endPoll() {
   await ensureDir(resultsDir);
   const poll = await getPollData();
-  if (!poll.question) return { error: 'No active poll to end.' };
+  if (!poll.title) return { error: 'No active poll to end.' };
 
   const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
   const resultFileName = `results-${timestamp}.json`;
   const resultFilePath = path.join(resultsDir, resultFileName);
   
   const results = {
-    question: poll.question,
-    results: poll.answers.map(({ text, votes }) => ({ text, votes })),
-    totalVotes: poll.answers.reduce((sum, a) => sum + a.votes, 0)
+    title: poll.title,
+    questions: poll.questions.map(q => ({
+      question: q.text,
+      results: q.answers.map(({ text, votes }) => ({ text, votes })),
+      totalVotes: q.answers.reduce((sum, a) => sum + a.votes, 0)
+    }))
   };
 
   await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
   
-  await writePollData({ question: null, answers: [] });
+  await writePollData({ title: null, questions: [] });
 
   revalidatePath('/');
   revalidatePath('/admin');

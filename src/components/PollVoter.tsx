@@ -2,15 +2,95 @@
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { getPoll, submitVote } from '@/lib/actions';
-import type { Poll } from '@/lib/types';
+import type { Poll, Question } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, BarChart2 } from 'lucide-react';
+import { Loader2, CheckCircle, BarChart2, HelpCircle } from 'lucide-react';
+
+function PollQuestion({
+  question,
+  onVote,
+  isVoting,
+  votedAnswerId,
+  totalVotes,
+}: {
+  question: Question;
+  onVote: (questionId: number, answerId: number) => void;
+  isVoting: boolean;
+  votedAnswerId: number | null;
+  totalVotes: number;
+}) {
+  const hasVoted = votedAnswerId !== null;
+
+  const sortedAnswers = useMemo(() => {
+    if (!question.answers) return [];
+    if (hasVoted) {
+      return [...question.answers].sort((a, b) => b.votes - a.votes);
+    }
+    return question.answers;
+  }, [question.answers, hasVoted]);
+  
+  return (
+    <Card className="w-full mx-auto shadow-md mb-6 border">
+        <CardHeader className="text-left">
+            <CardTitle className="text-2xl font-semibold flex items-start gap-2">
+              <HelpCircle className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+              <span>{question.text}</span>
+            </CardTitle>
+            <CardDescription className="flex items-center gap-2 pt-2 pl-8">
+                <BarChart2 className="h-4 w-4" />
+                Total Votes: {totalVotes}
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-4">
+            {hasVoted ? (
+                <div className="space-y-3 pt-2">
+                {sortedAnswers.map((answer) => {
+                    const percentage = totalVotes > 0 ? (answer.votes / totalVotes) * 100 : 0;
+                    const isUserChoice = answer.id === votedAnswerId;
+                    return (
+                    <div key={answer.id} className="relative w-full h-12 rounded-md bg-secondary overflow-hidden border border-border">
+                        <div
+                        className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/80'}`}
+                        style={{ width: `${percentage}%` }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-between px-4 font-medium">
+                            <div className={`flex items-center gap-2 ${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>
+                                {isUserChoice && <CheckCircle className="h-5 w-5" />}
+                                <span>{answer.text}</span>
+                            </div>
+                            <span className={`${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                        </div>
+                    </div>
+                    );
+                })}
+                </div>
+            ) : (
+                sortedAnswers.map((answer) => (
+                <Button
+                    key={answer.id}
+                    onClick={() => onVote(question.id, answer.id)}
+                    className="w-full h-14 text-lg justify-center"
+                    variant="outline"
+                    disabled={isVoting}
+                >
+                    {isVoting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {answer.text}
+                </Button>
+                ))
+            )}
+            </div>
+        </CardContent>
+    </Card>
+  );
+}
+
 
 export function PollVoter() {
   const [poll, setPoll] = useState<Poll | null>(null);
-  const [votedAnswerId, setVotedAnswerId] = useState<number | null>(null);
+  const [votedAnswers, setVotedAnswers] = useState<Record<number, number>>({});
   const [isVoting, startVoting] = useTransition();
   const { toast } = useToast();
 
@@ -31,31 +111,33 @@ export function PollVoter() {
   }, []);
   
   useEffect(() => {
-    if (poll?.question) {
+    if (poll?.title) {
         try {
-            const storedVote = localStorage.getItem(`voted_${poll.question}`);
-            if(storedVote) {
-                setVotedAnswerId(parseInt(storedVote, 10));
+            const storedVotes = localStorage.getItem(`voted_${poll.title}`);
+            if(storedVotes) {
+                setVotedAnswers(JSON.parse(storedVotes));
             } else {
-                setVotedAnswerId(null);
+                setVotedAnswers({});
             }
         } catch (error) {
             console.error("Failed to read from localStorage", error);
+            setVotedAnswers({});
         }
     }
-  }, [poll?.question]);
+  }, [poll?.title]);
 
-  const handleVote = (answerId: number) => {
-    if (!poll?.question) return;
+  const handleVote = (questionId: number, answerId: number) => {
+    if (!poll?.title) return;
 
     startVoting(async () => {
-      await submitVote(answerId);
+      await submitVote(questionId, answerId);
+      const newVotedAnswers = { ...votedAnswers, [questionId]: answerId };
       try {
-        localStorage.setItem(`voted_${poll.question!}`, answerId.toString());
+        localStorage.setItem(`voted_${poll.title!}`, JSON.stringify(newVotedAnswers));
       } catch (error) {
         console.error("Failed to write to localStorage", error);
       }
-      setVotedAnswerId(answerId);
+      setVotedAnswers(newVotedAnswers);
       toast({
         title: 'Vote Cast!',
         description: 'Thank you for your participation.',
@@ -63,15 +145,16 @@ export function PollVoter() {
       });
     });
   };
-
-  const totalVotes = useMemo(() => {
-    return poll?.answers.reduce((sum, answer) => sum + answer.votes, 0) || 0;
-  }, [poll?.answers]);
   
-  const sortedAnswers = useMemo(() => {
-    if (!poll?.answers) return [];
-    return [...poll.answers].sort((a, b) => b.votes - a.votes);
-  }, [poll?.answers]);
+  const questionVoteTotals = useMemo(() => {
+      const totals: Record<number, number> = {};
+      if (!poll?.questions) return totals;
+      for (const question of poll.questions) {
+          totals[question.id] = question.answers.reduce((sum, answer) => sum + answer.votes, 0);
+      }
+      return totals;
+  }, [poll?.questions])
+
 
   if (poll === null) {
     return (
@@ -82,7 +165,7 @@ export function PollVoter() {
     );
   }
 
-  if (!poll.question) {
+  if (!poll.title) {
     return (
       <Card className="w-full max-w-2xl mx-auto text-center shadow-lg">
         <CardHeader>
@@ -95,58 +178,20 @@ export function PollVoter() {
     );
   }
 
-  const hasVoted = votedAnswerId !== null;
-
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-lg">
-      <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold">{poll.question}</CardTitle>
-        <CardDescription className="flex items-center justify-center gap-2 pt-2">
-            <BarChart2 className="h-4 w-4" />
-            Total Votes: {totalVotes}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {hasVoted ? (
-             <div className="space-y-3 pt-2">
-              {sortedAnswers.map((answer) => {
-                const percentage = totalVotes > 0 ? (answer.votes / totalVotes) * 100 : 0;
-                const isUserChoice = answer.id === votedAnswerId;
-                return (
-                  <div key={answer.id} className="relative w-full h-12 rounded-md bg-secondary overflow-hidden border border-border">
-                    <div
-                      className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/80'}`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                    <div className="absolute inset-0 flex items-center justify-between px-4 font-medium">
-                        <div className={`flex items-center gap-2 ${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>
-                             {isUserChoice && <CheckCircle className="h-5 w-5" />}
-                             <span>{answer.text}</span>
-                        </div>
-                        <span className={`${isUserChoice ? 'text-accent-foreground' : 'text-primary-foreground mix-blend-difference'}`}>{answer.votes} ({percentage.toFixed(0)}%)</span>
-                    </div>
-                  </div>
-                );
-              })}
-              <p className="text-center text-sm text-muted-foreground pt-4">You have voted. Results are updated in real-time.</p>
-            </div>
-          ) : (
-            sortedAnswers.map((answer) => (
-              <Button
-                key={answer.id}
-                onClick={() => handleVote(answer.id)}
-                className="w-full h-14 text-lg justify-center"
-                variant="outline"
-                disabled={isVoting}
-              >
-                {isVoting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {answer.text}
-              </Button>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="w-full max-w-3xl mx-auto">
+        <h2 className="text-4xl font-bold text-center mb-2 text-primary">{poll.title}</h2>
+        <p className="text-center text-muted-foreground mb-8">Results are updated in real-time. You can vote on each question.</p>
+        {poll.questions.map((question) => (
+            <PollQuestion 
+                key={question.id}
+                question={question}
+                onVote={handleVote}
+                isVoting={isVoting}
+                votedAnswerId={votedAnswers[question.id] ?? null}
+                totalVotes={questionVoteTotals[question.id] ?? 0}
+            />
+        ))}
+    </div>
   );
 }

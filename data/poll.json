@@ -1,1 +1,21 @@
-{"question":null,"answers":[]}
+{
+  "title": "Sondaggio su di noi",
+  "questions": [
+    {
+      "id": 0,
+      "text": "Siamo fortissimi?",
+      "answers": [
+        {
+          "id": 0,
+          "text": "Si",
+          "votes": 1
+        },
+        {
+          "id": 1,
+          "text": "No",
+          "votes": 0
+        }
+      ]
+    }
+  ]
+}
