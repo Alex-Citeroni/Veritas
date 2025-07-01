@@ -87,9 +87,10 @@ async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Prom
 
 
 export async function login(formData: FormData) {
+  const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
-  if (password === 'Leonardo') {
+  if (username === 'Admin' && password === 'Leonardo') {
     cookies().set('auth', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -98,7 +99,7 @@ export async function login(formData: FormData) {
     });
     redirect('/admin');
   } else {
-    return { error: 'Password errata.' };
+    return { error: 'Username o password errati.' };
   }
 }
 

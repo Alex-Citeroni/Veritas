@@ -20,6 +20,10 @@ export function Login() {
       const result = await login(formData);
       if (result?.error) {
         setError(result.error);
+        const usernameInput = event.currentTarget.elements.namedItem('username') as HTMLInputElement;
+        if (usernameInput) {
+            usernameInput.value = '';
+        }
         const passwordInput = event.currentTarget.elements.namedItem('password') as HTMLInputElement;
         if (passwordInput) {
           passwordInput.value = '';
@@ -38,10 +42,21 @@ export function Login() {
               Accesso Admin
             </CardTitle>
             <CardDescription>
-              Inserisci la password per gestire i sondaggi.
+              Inserisci username e password per gestire i sondaggi.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                name="username"
+                type="text"
+                required
+                disabled={isPending}
+                autoComplete="username"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -50,6 +65,7 @@ export function Login() {
                 type="password"
                 required
                 disabled={isPending}
+                autoComplete="current-password"
               />
             </div>
             {error && (
