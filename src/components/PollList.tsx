@@ -1,4 +1,3 @@
-// This is a new file: src/components/PollList.tsx
 'use client';
 
 import type { Poll } from '@/lib/types';
@@ -34,15 +33,21 @@ function PollActionButtons({ poll }: { poll: Poll }) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleAction = (action: (id: string, owner: string) => Promise<any>, successMessage: string) => {
+  const handleAction = (
+    action: (id: string, owner: string) => Promise<{ success: boolean; error?: string }>,
+    successMessage: string
+  ) => {
     startTransition(async () => {
-      try {
-        await action(poll.id, poll.owner);
+      const result = await action(poll.id, poll.owner);
+      if (result.success) {
         toast({ title: 'Successo!', description: successMessage });
         router.refresh();
-      } catch (e) {
-        const error = e as Error;
-        toast({ variant: 'destructive', title: 'Errore', description: error.message });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Errore',
+          description: result.error || 'Si è verificato un errore sconosciuto.',
+        });
       }
     });
   };

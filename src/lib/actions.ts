@@ -280,60 +280,82 @@ export async function savePoll(
     }
 }
 
-export async function deletePoll(pollId: string, username: string) {
-    const poll = await getPollById(pollId, username);
-    if (!poll || poll.owner !== username) {
-        return { error: 'Sondaggio non trovato o non autorizzato.' };
-    }
-    
-    // If poll is active, archive its results
-    if (poll.isActive) {
-       await archivePollResults(poll, 'ended');
-    }
-
-    const filePath = getPollFilePath(username, pollId);
-    await fs.unlink(filePath);
-
-    revalidatePath(`/${username}`);
-    revalidatePath('/admin');
-}
-
-
-export async function activatePoll(pollId: string, username: string) {
-    const allPolls = await listPolls(username);
-    let targetPoll: Poll | null = null;
-    
-    for (const p of allPolls) {
-        if (p.id === pollId) {
-            targetPoll = p;
-        } else if (p.isActive) {
-            p.isActive = false;
-            await writePollFile(getPollFilePath(username, p.id), p);
+export async function deletePoll(pollId: string, username: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const poll = await getPollById(pollId, username);
+        if (!poll || poll.owner !== username) {
+            return { success: false, error: 'Sondaggio non trovato o non autorizzato.' };
         }
-    }
+        
+        if (poll.isActive) {
+           await archivePollResults(poll, 'ended');
+        }
 
-    if (targetPoll) {
-        targetPoll.isActive = true;
-        await writePollFile(getPollFilePath(username, targetPoll.id), targetPoll);
-    }
+        const filePath = getPollFilePath(username, pollId);
+        await fs.unlink(filePath);
 
-    revalidatePath(`/${username}`);
-    revalidatePath('/admin');
+        revalidatePath(`/${username}`);
+        revalidatePath('/admin');
+        return { success: true };
+    } catch (e) {
+        const error = e as Error;
+        console.error(`deletePoll failed for poll ${pollId}:`, error);
+        return { success: false, error: error.message || 'Impossibile eliminare il sondaggio.' };
+    }
 }
 
-export async function deactivatePoll(pollId: string, username: string) {
-    const poll = await getPollById(pollId, username);
-    if (!poll || poll.owner !== username) {
-        return { error: 'Sondaggio non trovato o non autorizzato.' };
+
+export async function activatePoll(pollId: string, username: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const allPolls = await listPolls(username);
+        let targetPoll: Poll | null = null;
+        
+        for (const p of allPolls) {
+            if (p.id === pollId) {
+                targetPoll = p;
+            } else if (p.isActive) {
+                p.isActive = false;
+                await writePollFile(getPollFilePath(username, p.id), p);
+            }
+        }
+
+        if (targetPoll) {
+            targetPoll.isActive = true;
+            await writePollFile(getPollFilePath(username, targetPoll.id), targetPoll);
+        } else {
+            return { success: false, error: 'Sondaggio non trovato.' };
+        }
+
+        revalidatePath(`/${username}`);
+        revalidatePath('/admin');
+        return { success: true };
+    } catch (e) {
+        const error = e as Error;
+        console.error(`activatePoll failed for poll ${pollId}:`, error);
+        return { success: false, error: error.message || 'Impossibile attivare il sondaggio.' };
     }
-    if (poll.isActive) {
-        await archivePollResults(poll, 'ended');
-        poll.isActive = false;
-        await writePollFile(getPollFilePath(username, poll.id), poll);
+}
+
+export async function deactivatePoll(pollId: string, username: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const poll = await getPollById(pollId, username);
+        if (!poll || poll.owner !== username) {
+            return { success: false, error: 'Sondaggio non trovato o non autorizzato.' };
+        }
+        if (poll.isActive) {
+            await archivePollResults(poll, 'ended');
+            poll.isActive = false;
+            await writePollFile(getPollFilePath(username, poll.id), poll);
+        }
+        
+        revalidatePath(`/${username}`);
+        revalidatePath('/admin');
+        return { success: true };
+    } catch (e) {
+        const error = e as Error;
+        console.error(`deactivatePoll failed for poll ${pollId}:`, error);
+        return { success: false, error: error.message || 'Impossibile disattivare il sondaggio.' };
     }
-    
-    revalidatePath(`/${username}`);
-    revalidatePath('/admin');
 }
 
 // --- Voting Page Actions ---

@@ -2,7 +2,7 @@
   "id": "8536a1cd-a8b9-4c35-8b56-4ace1434d875",
   "title": "Provaimo",
   "owner": "Admin",
-  "isActive": false,
+  "isActive": true,
   "questions": [
     {
       "id": 0,
