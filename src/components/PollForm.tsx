@@ -261,17 +261,27 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
       try {
-        await savePoll(data, username, pollId);
-        toast({
-            title: 'Successo!',
-            description: `Sondaggio ${isEditMode ? 'aggiornato' : 'creato'} con successo.`,
-        });
-        // Redirect is handled by the server action
+        const result = await savePoll(data, username, pollId);
+        
+        if (result.success) {
+            toast({
+                title: 'Successo!',
+                description: `Sondaggio ${isEditMode ? 'aggiornato' : 'creato'} con successo.`,
+            });
+            router.push('/admin');
+        } else {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Errore', 
+                description: result.error || "Si è verificato un errore sconosciuto." 
+            });
+        }
       } catch (error) {
+        console.error("An unexpected error occurred in PollForm onSubmit:", error);
         toast({ 
             variant: 'destructive', 
-            title: 'Errore', 
-            description: error instanceof Error ? error.message : "Si è verificato un errore sconosciuto." 
+            title: 'Errore Imprevisto', 
+            description: "Si è verificato un errore di comunicazione. Riprova." 
         });
       }
     });

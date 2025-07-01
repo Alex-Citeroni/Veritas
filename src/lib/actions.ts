@@ -223,53 +223,61 @@ export async function savePoll(
     data: { title: string; questions: { text: string; answers: { text: string }[] }[] },
     username: string,
     pollIdToUpdate?: string
-) {
-    const { title, questions } = data;
-    let poll: Poll;
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { title, questions } = data;
+        let poll: Poll;
 
-    if (pollIdToUpdate) {
-        // Update existing poll
-        const existingPoll = await getPollById(pollIdToUpdate, username);
-        if (!existingPoll || existingPoll.owner !== username) {
-            return { error: 'Sondaggio non trovato o non autorizzato.' };
+        if (pollIdToUpdate) {
+            // Update existing poll
+            const existingPoll = await getPollById(pollIdToUpdate, username);
+            if (!existingPoll || existingPoll.owner !== username) {
+                return { success: false, error: 'Sondaggio non trovato o non autorizzato.' };
+            }
+            poll = {
+                ...existingPoll,
+                title,
+                questions: questions.map((q, qIndex) => ({
+                    id: qIndex,
+                    text: q.text,
+                    answers: q.answers.map((a, aIndex) => ({
+                        id: aIndex,
+                        text: a.text,
+                        votes: 0, // Reset votes on update
+                    })),
+                })),
+            };
+        } else {
+            // Create new poll
+            poll = {
+                id: randomUUID(),
+                title,
+                owner: username,
+                isActive: false, // New polls are not active by default
+                questions: questions.map((q, qIndex) => ({
+                    id: qIndex,
+                    text: q.text,
+                    answers: q.answers.map((a, aIndex) => ({
+                        id: aIndex,
+                        text: a.text,
+                        votes: 0,
+                    })),
+                })),
+            };
         }
-        poll = {
-            ...existingPoll,
-            title,
-            questions: questions.map((q, qIndex) => ({
-                id: qIndex,
-                text: q.text,
-                answers: q.answers.map((a, aIndex) => ({
-                    id: aIndex,
-                    text: a.text,
-                    votes: 0, // Reset votes on update
-                })),
-            })),
-        };
-    } else {
-        // Create new poll
-        poll = {
-            id: randomUUID(),
-            title,
-            owner: username,
-            isActive: false, // New polls are not active by default
-            questions: questions.map((q, qIndex) => ({
-                id: qIndex,
-                text: q.text,
-                answers: q.answers.map((a, aIndex) => ({
-                    id: aIndex,
-                    text: a.text,
-                    votes: 0,
-                })),
-            })),
-        };
+
+        const filePath = getPollFilePath(username, poll.id);
+        await writePollFile(filePath, poll);
+
+        revalidatePath('/admin');
+        revalidatePath(`/${username}`);
+        
+        return { success: true };
+    } catch (e) {
+        console.error("savePoll failed:", e);
+        const error = e as Error;
+        return { success: false, error: error.message || 'Si è verificato un errore durante il salvataggio del sondaggio.' };
     }
-
-    const filePath = getPollFilePath(username, poll.id);
-    await writePollFile(filePath, poll);
-
-    revalidatePath('/admin');
-    redirect('/admin');
 }
 
 export async function deletePoll(pollId: string, username: string) {
