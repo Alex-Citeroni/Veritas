@@ -118,7 +118,6 @@ function SortableAnswer({ control, questionIndex, answerIndex, field, remove, is
   )
 }
 
-
 function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: Control<PollFormValues>, questionIndex: number, isSubmitting: boolean }) {
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -184,6 +183,68 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
   );
 }
 
+function SortableQuestionItem({ id, control, questionIndex, removeQuestion, isSubmitting, totalQuestions }: {
+  id: string;
+  control: Control<PollFormValues>;
+  questionIndex: number;
+  removeQuestion: (index: number) => void;
+  isSubmitting: boolean;
+  totalQuestions: number;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2">
+      <div {...attributes} {...listeners} className="p-2 cursor-grab touch-none self-center" aria-label="Riordina domanda">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <Card className="bg-secondary/50 p-4 w-full">
+        <div className="flex justify-between items-start mb-4">
+          <FormField
+            control={control}
+            name={`questions.${questionIndex}.text`}
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormLabel>Domanda {questionIndex + 1}</FormLabel>
+                <FormControl>
+                  <Input placeholder="Qual è il tuo framework preferito?" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => removeQuestion(questionIndex)}
+            disabled={totalQuestions <= 1 || isSubmitting}
+            className="ml-2 mt-8"
+            aria-label="Rimuovi domanda"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+        <AnswersFieldArray control={control} questionIndex={questionIndex} isSubmitting={isSubmitting} />
+      </Card>
+    </div>
+  );
+}
+
+
 export function PollForm({ currentPoll, username }: PollFormProps) {
   const [isSubmitting, startSubmitting] = useTransition();
   const [isEnding, startEnding] = useTransition();
@@ -197,7 +258,7 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
     },
   });
 
-  const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({
+  const { fields: questionFields, append: appendQuestion, remove: removeQuestion, move: moveQuestion } = useFieldArray({
     control: form.control,
     name: 'questions',
   });
@@ -206,9 +267,6 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
 
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
-      // Don't wrap createPoll in a try/catch.
-      // Redirects work by throwing an error that the framework catches.
-      // The action itself returns an error object for controlled errors.
       const result = await createPoll(data, hasActivePoll, username);
       if (result?.error) {
         toast({ variant: 'destructive', title: 'Errore', description: result.error });
@@ -227,6 +285,26 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
       }
     });
   };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleQuestionDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = questionFields.findIndex((item) => item.id === active.id);
+      const newIndex = questionFields.findIndex((item) => item.id === over.id);
+      moveQuestion(oldIndex, newIndex);
+    }
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
@@ -255,38 +333,27 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
 
             <div className="space-y-4">
               <FormLabel>Domande</FormLabel>
-              {questionFields.map((questionField, questionIndex) => (
-                <Card key={questionField.id} className="bg-secondary/50 p-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <FormField
-                      control={form.control}
-                      name={`questions.${questionIndex}.text`}
-                      render={({ field }) => (
-                        <FormItem className="flex-grow">
-                          <FormLabel>Domanda {questionIndex + 1}</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Qual è il tuo framework preferito?" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeQuestion(questionIndex)}
-                        disabled={questionFields.length <= 1 || isSubmitting}
-                        className="ml-2 mt-8"
-                        aria-label="Rimuovi domanda"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleQuestionDragEnd}
+              >
+                <SortableContext items={questionFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-4">
+                    {questionFields.map((questionField, questionIndex) => (
+                      <SortableQuestionItem
+                        key={questionField.id}
+                        id={questionField.id}
+                        control={form.control}
+                        questionIndex={questionIndex}
+                        removeQuestion={removeQuestion}
+                        isSubmitting={isSubmitting}
+                        totalQuestions={questionFields.length}
+                      />
+                    ))}
                   </div>
-                  
-                  <AnswersFieldArray control={form.control} questionIndex={questionIndex} isSubmitting={isSubmitting} />
-                </Card>
-              ))}
+                </SortableContext>
+              </DndContext>
                <Button
                 type="button"
                 variant="outline"

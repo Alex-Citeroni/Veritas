@@ -1,5 +1,5 @@
 {
-  "id": "056118a1-97bf-4960-87cb-f666494df91c",
+  "id": "b9e0200a-d6b2-41dc-b37b-b5d607d350a1",
   "title": "Proviamo",
   "owner": "Admin",
   "questions": [
@@ -15,6 +15,22 @@
         {
           "id": 1,
           "text": "Male male",
+          "votes": 1
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "text": "Eccolo",
+      "answers": [
+        {
+          "id": 0,
+          "text": "sissignore",
+          "votes": 1
+        },
+        {
+          "id": 1,
+          "text": "nosignore",
           "votes": 0
         }
       ]
