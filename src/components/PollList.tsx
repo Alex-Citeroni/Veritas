@@ -24,6 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Trash2, Edit, PlayCircle, StopCircle, Share2, Eye, List, Download, FileText } from 'lucide-react';
 import { ShareLinkButton } from './ShareLinkButton';
