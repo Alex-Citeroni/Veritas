@@ -51,6 +51,40 @@ async function writePollData(poll: Poll) {
   await fs.writeFile(pollFilePath, JSON.stringify(poll, null, 2), 'utf-8');
 }
 
+// Helper function to archive results
+async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Promise<string> {
+    if (!poll.title) {
+        throw new Error('Nessun sondaggio attivo da archiviare.');
+    }
+
+    await ensureDir(resultsDir);
+    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+    const safeTitle = poll.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s/g, '_').substring(0, 50);
+    const prefix = reason === 'ended' ? 'results' : 'archived-results';
+    const resultFileName = `${prefix}-${timestamp}-${safeTitle}.json`;
+    const resultFilePath = path.join(resultsDir, resultFileName);
+
+    const results = {
+        title: poll.title,
+        timestamp: new Date().toISOString(),
+        status: reason,
+        questions: poll.questions.map(q => ({
+            question: q.text,
+            results: q.answers.map(({ text, votes }) => ({ text, votes })),
+            totalVotes: q.answers.reduce((sum, a) => sum + a.votes, 0)
+        }))
+    };
+
+    try {
+        await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
+        return resultFileName;
+    } catch (error) {
+        console.error(`Failed to archive results for poll "${poll.title}":`, error);
+        throw new Error(`Impossibile archiviare i risultati per il sondaggio "${poll.title}".`);
+    }
+}
+
+
 export async function login(formData: FormData) {
   const password = formData.get('password') as string;
 
@@ -84,6 +118,18 @@ export async function createPoll(data: { title: string; questions: { text: strin
     }
   }
 
+  if (isUpdate) {
+    try {
+      const currentPoll = await getPollData();
+      if (currentPoll.title) {
+        await archivePollResults(currentPoll, 'updated');
+      }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Impossibile archiviare i risultati del sondaggio precedente.";
+        return { error: errorMessage };
+    }
+  }
+
   const newPoll: Poll = {
     title,
     questions: questions.map((question, qIndex) => ({
@@ -111,7 +157,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
     redirect('/');
   }
 
-  return { success: 'Sondaggio aggiornato con successo!' };
+  return { success: isUpdate ? 'Sondaggio aggiornato con successo! I risultati precedenti sono stati archiviati.' : 'Sondaggio creato con successo!' };
 }
 
 export async function getPoll(): Promise<Poll> {
@@ -141,35 +187,23 @@ export async function submitVote(questionId: number, answerId: number) {
 }
 
 export async function endPoll() {
-  await ensureDir(resultsDir);
-  const poll = await getPollData();
-  if (!poll.title) return { error: 'Nessun sondaggio attivo da terminare.' };
+    try {
+        const poll = await getPollData();
+        if (!poll.title) {
+            return { error: 'Nessun sondaggio attivo da terminare.' };
+        }
+        const resultFileName = await archivePollResults(poll, 'ended');
+        await writePollData({ title: null, questions: [] });
+        
+        revalidatePath('/');
+        revalidatePath('/admin');
+        return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
 
-  const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-  const resultFileName = `results-${timestamp}.json`;
-  const resultFilePath = path.join(resultsDir, resultFileName);
-  
-  const results = {
-    title: poll.title,
-    endedAt: new Date().toISOString(),
-    questions: poll.questions.map(q => ({
-      question: q.text,
-      results: q.answers.map(({ text, votes }) => ({ text, votes })),
-      totalVotes: q.answers.reduce((sum, a) => sum + a.votes, 0)
-    }))
-  };
-
-  try {
-    await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
-    await writePollData({ title: null, questions: [] });
-  } catch (error) {
-    console.error("Failed to write results or clear poll:", error);
-    return { error: "Impossibile terminare il sondaggio. Si è verificato un errore del server." };
-  }
-  
-  revalidatePath('/');
-  revalidatePath('/admin');
-  return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
+    } catch (error) {
+        console.error("Failed to end poll:", error);
+        const errorMessage = error instanceof Error ? error.message : "Impossibile terminare il sondaggio. Si è verificato un errore del server.";
+        return { error: errorMessage };
+    }
 }
 
 export async function getResultsFiles(): Promise<string[]> {
