@@ -49,7 +49,9 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
+    if (!password || !hash) return false;
     const [salt, key] = hash.split(':');
+    if (!salt || !key) return false;
     const keyBuffer = Buffer.from(key, 'hex');
     const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
     return timingSafeEqual(keyBuffer, derivedKey);
@@ -148,8 +150,7 @@ export async function authenticateAction(prevState: any, formData: FormData) {
   const mode = formData.get('mode') as 'login' | 'register';
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
-  let successful = false;
-
+  
   if (!username || !password) {
     return { error: 'Username e password sono obbligatori.' };
   }
@@ -179,7 +180,6 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     }
 
     await loginUser(username);
-    successful = true;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT' && mode === 'login') {
       return { error: 'Utente non trovato.' };
@@ -188,12 +188,7 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     return { error: 'Si è verificato un errore del server. Riprova.' };
   }
   
-  if(successful) {
-    redirect('/admin');
-  }
-  
-  // This part is unreachable if successful, but keeps TS happy.
-  return { error: 'Si è verificato un errore inaspettato.' };
+  redirect('/admin');
 }
 
 export async function logout() {
@@ -213,7 +208,7 @@ export async function listPolls(username: string): Promise<Poll[]> {
             .map(file => readPollFile(path.join(pollsDir, file)));
         
         const polls = (await Promise.all(pollPromises)).filter(p => p !== null) as Poll[];
-        return polls.sort((a, b) => a.title.localeCompare(b.title));
+        return polls.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } catch (error) {
         console.error(`Failed to list polls for user ${username}:`, error);
         return [];
@@ -359,9 +354,15 @@ export async function deactivatePoll(pollId: string, username: string): Promise<
 // --- Voting Page Actions ---
 
 export async function getPoll(username: string): Promise<Poll | null> {
-    const allPolls = await listPolls(username);
-    const activePoll = allPolls.find(p => p.isActive) || null;
-    return activePoll;
+    try {
+      const allPolls = await listPolls(username);
+      const activePoll = allPolls.find(p => p.isActive) || null;
+      return activePoll;
+    } catch (error) {
+      console.error(`Error getting poll for user ${username}:`, error);
+      // Return a "no poll" state instead of throwing
+      return null;
+    }
 }
 
 
@@ -403,4 +404,130 @@ export async function getResultsFiles(username: string): Promise<string[]> {
     console.error("Failed to read results directory:", error);
     return [];
   }
+}
+
+// --- Profile Actions ---
+
+export async function changeUsernameAction(prevState: any, formData: FormData) {
+  const currentUsername = cookies().get('username')?.value;
+  if (!currentUsername) {
+    return { error: 'Sessione scaduta. Effettua nuovamente il login.' };
+  }
+
+  const newUsername = formData.get('newUsername') as string;
+  const password = formData.get('password') as string;
+  
+  // Validation
+  if (!newUsername || !password) {
+    return { error: 'Tutti i campi sono obbligatori.' };
+  }
+  if (newUsername === currentUsername) {
+    return { error: 'Il nuovo username deve essere diverso da quello attuale.' };
+  }
+
+  const checkResult = await checkUsername(newUsername);
+  if (checkResult.exists) {
+      return { error: `L'username "${newUsername}" è già in uso.` };
+  }
+  if (checkResult.error) {
+       return { error: checkResult.error };
+  }
+
+  try {
+    // Verify password
+    const userFilePath = getUserFilePath(currentUsername);
+    const userData = JSON.parse(await fs.readFile(userFilePath, 'utf-8'));
+    const isValid = await verifyPassword(password, userData.passwordHash);
+    if (!isValid) {
+        return { error: 'La password attuale non è corretta.' };
+    }
+    
+    // Perform rename
+    const safeNewUsername = checkResult.username;
+
+    const oldUserDir = getUserDir(currentUsername);
+    const newUserDir = getUserDir(safeNewUsername);
+    const oldResultsDir = getResultsDir(currentUsername);
+    const newResultsDir = getResultsDir(safeNewUsername);
+
+    // Rename data directory
+    await fs.rename(oldUserDir, newUserDir);
+    
+    // Rename results directory if it exists
+    try {
+        await fs.access(oldResultsDir);
+        await fs.rename(oldResultsDir, newResultsDir);
+    } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
+            console.warn(`Impossibile rinominare la cartella dei risultati per ${currentUsername}:`, e);
+        }
+    }
+    
+    // Update owner in all poll files
+    const pollsDir = getPollsDir(safeNewUsername); // Use new path
+    const pollFiles = await fs.readdir(pollsDir);
+    for (const file of pollFiles.filter(f => f.endsWith('.json'))) {
+        const pollPath = path.join(pollsDir, file);
+        const poll = await readPollFile(pollPath);
+        if (poll) {
+            poll.owner = safeNewUsername;
+            await writePollFile(pollPath, poll);
+        }
+    }
+
+    // Update user file
+    userData.username = safeNewUsername;
+    await fs.writeFile(getUserFilePath(safeNewUsername), JSON.stringify(userData, null, 2));
+
+    // Update cookie
+    cookies().set('username', safeNewUsername, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24, path: '/' });
+
+  } catch(e) {
+      console.error("Errore durante la modifica dell'username:", e);
+      return { error: 'Si è verificato un errore del server durante la modifica dello username.' };
+  }
+  
+  return { success: true };
+}
+
+export async function changePasswordAction(prevState: any, formData: FormData) {
+  const username = cookies().get('username')?.value;
+  if (!username) {
+    return { error: 'Sessione scaduta. Effettua nuovamente il login.' };
+  }
+
+  const currentPassword = formData.get('currentPassword') as string;
+  const newPassword = formData.get('newPassword') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+
+  // Validation
+  if (!currentPassword || !newPassword || !confirmPassword) {
+      return { error: 'Tutti i campi sono obbligatori.' };
+  }
+  if (newPassword !== confirmPassword) {
+      return { error: 'Le nuove password non coincidono.' };
+  }
+  if (newPassword.length < 6) {
+      return { error: 'La nuova password deve contenere almeno 6 caratteri.'};
+  }
+
+  try {
+    // Verify current password
+    const userFilePath = getUserFilePath(username);
+    const userData = JSON.parse(await fs.readFile(userFilePath, 'utf-8'));
+    const isValid = await verifyPassword(currentPassword, userData.passwordHash);
+    if (!isValid) {
+        return { error: 'La password attuale non è corretta.' };
+    }
+    
+    // Update password
+    userData.passwordHash = await hashPassword(newPassword);
+    await fs.writeFile(userFilePath, JSON.stringify(userData, null, 2));
+
+  } catch (e) {
+      console.error("Errore durante la modifica della password:", e);
+      return { error: 'Si è verificato un errore del server durante la modifica della password.' };
+  }
+
+  return { success: true };
 }

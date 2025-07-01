@@ -7,7 +7,7 @@ import { PollForm } from '@/components/PollForm';
 import { PollList } from '@/components/PollList';
 import type { Poll } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, UserCog } from 'lucide-react';
 
 export type PollWithResults = Poll & { results: string[] };
 
@@ -49,8 +49,13 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
                 <h1 className="text-xl font-bold text-primary">Dashboard Veritas</h1>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground hidden sm:inline">Ciao, {username}!</span>
+                    <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                      <Link href="/admin/profile" title="Gestisci Profilo">
+                          <UserCog className="h-5 w-5" />
+                      </Link>
+                    </Button>
                     <LogoutButton />
                 </div>
             </div>
