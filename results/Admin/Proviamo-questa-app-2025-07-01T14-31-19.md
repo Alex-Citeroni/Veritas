@@ -2,7 +2,7 @@
 
 - **Proprietario**: Admin
 - **Stato**: Archiviato
-- **Generato il**: 01/07/2025, 14:25:18
+- **Generato il**: 01/07/2025, 14:31:19
 - **ID Sondaggio**: bb6df52d-32d0-477e-b0d1-9afa4a80222c
 
 ---

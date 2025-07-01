@@ -100,7 +100,7 @@ async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Prom
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .slice(0, 50); // Truncate
 
-    const resultFileName = `${safeTitle}-${timestampForFilename}.md`;
+    const resultFileName = `${poll.id}-${safeTitle}-${timestampForFilename}.md`;
     const resultFilePath = path.join(userResultsDir, resultFileName);
 
     let fileContent = `# Risultati Sondaggio: ${poll.title}\n\n`;
@@ -311,9 +311,20 @@ export async function deletePoll(pollId: string, username: string): Promise<{ su
         const filePath = getPollFilePath(username, pollId);
         await fs.unlink(filePath);
 
-        // After deleting, check if any polls are left. If not, we don't need to do anything.
-        // If there are polls but none are active, we could activate one, but the current spec
-        // is just to delete. Activating another poll could be an unexpected side effect.
+        // Also delete associated result files
+        const userResultsDir = getResultsDir(username);
+        const allResultFiles = await getResultsFiles(username); 
+        const pollResultFiles = allResultFiles.filter(file => file.startsWith(pollId));
+
+        for (const file of pollResultFiles) {
+            try {
+                const resultFilePath = path.join(userResultsDir, file);
+                await fs.unlink(resultFilePath);
+            } catch (unlinkError) {
+                console.warn(`Could not delete result file ${file}:`, unlinkError)
+                // Continue even if one file fails to delete
+            }
+        }
 
         return { success: true };
     } catch (e) {
