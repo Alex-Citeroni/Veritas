@@ -49,11 +49,11 @@ export async function createPoll(data: { title: string; questions: { text: strin
   const { title, questions } = data;
 
   if (!title || questions.length < 1) {
-    return { error: 'A title and at least one question are required.' };
+    return { error: 'Sono richiesti un titolo e almeno una domanda.' };
   }
   for (const q of questions) {
     if (!q.text || q.answers.length < 2 || q.answers.some(a => !a.text.trim())) {
-        return { error: 'Each question must have text and at least two non-empty answers.' };
+        return { error: 'Ogni domanda deve avere un testo e almeno due risposte non vuote.' };
     }
   }
 
@@ -74,7 +74,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
 
   revalidatePath('/');
   revalidatePath('/admin');
-  return { success: 'Poll created/updated successfully!' };
+  return { success: 'Sondaggio creato/aggiornato con successo!' };
 }
 
 export async function getPoll(): Promise<Poll> {
@@ -83,25 +83,25 @@ export async function getPoll(): Promise<Poll> {
 
 export async function submitVote(questionId: number, answerId: number) {
   const poll = await getPollData();
-  if (!poll.title) return { error: 'No active poll.' };
+  if (!poll.title) return { error: 'Nessun sondaggio attivo.' };
 
   const question = poll.questions.find(q => q.id === questionId);
-  if (!question) return { error: 'Invalid question.' };
+  if (!question) return { error: 'Domanda non valida.' };
   
   const answer = question.answers.find(a => a.id === answerId);
   if (answer) {
     answer.votes += 1;
     await writePollData(poll);
     revalidatePath('/');
-    return { success: 'Vote submitted!' };
+    return { success: 'Voto inviato!' };
   }
-  return { error: 'Invalid answer.' };
+  return { error: 'Risposta non valida.' };
 }
 
 export async function endPoll() {
   await ensureDir(resultsDir);
   const poll = await getPollData();
-  if (!poll.title) return { error: 'No active poll to end.' };
+  if (!poll.title) return { error: 'Nessun sondaggio attivo da terminare.' };
 
   const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
   const resultFileName = `results-${timestamp}.json`;
@@ -122,5 +122,5 @@ export async function endPoll() {
 
   revalidatePath('/');
   revalidatePath('/admin');
-  return { success: `Poll ended and results saved to ${resultFileName}` };
+  return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
 }

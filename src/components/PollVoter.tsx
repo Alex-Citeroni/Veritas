@@ -40,7 +40,7 @@ function PollQuestion({
             </CardTitle>
             <CardDescription className="flex items-center gap-2 pt-2 pl-8">
                 <BarChart2 className="h-4 w-4" />
-                Total Votes: {totalVotes}
+                Voti totali: {totalVotes}
             </CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,8 +139,8 @@ export function PollVoter() {
       }
       setVotedAnswers(newVotedAnswers);
       toast({
-        title: 'Vote Cast!',
-        description: 'Thank you for your participation.',
+        title: 'Voto Inviato!',
+        description: 'Grazie per la tua partecipazione.',
         className: 'bg-primary text-primary-foreground',
       });
     });
@@ -160,7 +160,7 @@ export function PollVoter() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-primary">
         <Loader2 className="h-12 w-12 animate-spin" />
-        <p className="mt-4 text-lg">Loading Poll...</p>
+        <p className="mt-4 text-lg">Caricamento Sondaggio...</p>
       </div>
     );
   }
@@ -169,10 +169,10 @@ export function PollVoter() {
     return (
       <Card className="w-full max-w-2xl mx-auto text-center shadow-lg">
         <CardHeader>
-          <CardTitle>No Active Poll</CardTitle>
+          <CardTitle>Nessun Sondaggio Attivo</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">The admin hasn't started a poll yet. Please stand by!</p>
+          <p className="text-muted-foreground">L'amministratore non ha ancora avviato un sondaggio. Attendi!</p>
         </CardContent>
       </Card>
     );
@@ -181,7 +181,7 @@ export function PollVoter() {
   return (
     <div className="w-full max-w-3xl mx-auto">
         <h2 className="text-4xl font-bold text-center mb-2 text-primary">{poll.title}</h2>
-        <p className="text-center text-muted-foreground mb-8">Results are updated in real-time. You can vote on each question.</p>
+        <p className="text-center text-muted-foreground mb-8">I risultati si aggiornano in tempo reale. Puoi votare per ogni domanda.</p>
         {poll.questions.map((question) => (
             <PollQuestion 
                 key={question.id}

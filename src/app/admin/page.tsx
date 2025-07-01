@@ -13,7 +13,7 @@ export default async function AdminPage() {
         <Button asChild variant="outline">
           <Link href="/">
             <Eye className="mr-2 h-4 w-4" />
-            View Poll
+            Vedi Sondaggio
           </Link>
         </Button>
       </header>

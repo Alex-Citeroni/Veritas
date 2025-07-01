@@ -16,6 +16,22 @@
           "votes": 0
         }
       ]
+    },
+    {
+      "id": 1,
+      "text": "E' proprio una bella applicazione?",
+      "answers": [
+        {
+          "id": 0,
+          "text": "Si",
+          "votes": 0
+        },
+        {
+          "id": 1,
+          "text": "No",
+          "votes": 1
+        }
+      ]
     }
   ]
 }

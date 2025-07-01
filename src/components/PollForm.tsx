@@ -26,13 +26,13 @@ import {
 } from "@/components/ui/alert-dialog"
 
 const pollFormSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters long.'),
+  title: z.string().min(3, 'Il titolo deve contenere almeno 3 caratteri.'),
   questions: z.array(
     z.object({
-      text: z.string().min(5, 'Question must be at least 5 characters long.'),
-      answers: z.array(z.object({ text: z.string().min(1, 'Answer cannot be empty.') })).min(2, 'At least two answers are required.'),
+      text: z.string().min(5, 'La domanda deve contenere almeno 5 caratteri.'),
+      answers: z.array(z.object({ text: z.string().min(1, 'La risposta non può essere vuota.') })).min(2, 'Sono necessarie almeno due risposte.'),
     })
-  ).min(1, 'At least one question is required.'),
+  ).min(1, 'È richiesta almeno una domanda.'),
 });
 
 type PollFormValues = z.infer<typeof pollFormSchema>;
@@ -49,7 +49,7 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
 
   return (
     <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-      <FormLabel>Answers for Question {questionIndex + 1}</FormLabel>
+      <FormLabel>Risposte per la Domanda {questionIndex + 1}</FormLabel>
       {fields.map((field, index) => (
         <FormField
           key={field.id}
@@ -59,14 +59,14 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
             <FormItem>
               <FormControl>
                 <div className="flex items-center gap-2">
-                  <Input placeholder={`Answer option ${index + 1}`} {...field} />
+                  <Input placeholder={`Opzione di risposta ${index + 1}`} {...field} />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
                     disabled={fields.length <= 2 || isSubmitting}
-                    aria-label="Remove answer"
+                    aria-label="Rimuovi risposta"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -85,7 +85,7 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
         disabled={isSubmitting}
       >
         <PlusCircle className="mr-2 h-4 w-4" />
-        Add Answer
+        Aggiungi Risposta
       </Button>
     </div>
   );
@@ -113,9 +113,9 @@ export function PollForm({ currentPoll }: PollFormProps) {
     startSubmitting(async () => {
       const result = await createPoll(data);
       if (result.error) {
-        toast({ variant: 'destructive', title: 'Error', description: result.error });
+        toast({ variant: 'destructive', title: 'Errore', description: result.error });
       } else {
-        toast({ title: 'Success', description: result.success });
+        toast({ title: 'Successo', description: result.success });
       }
     });
   };
@@ -124,9 +124,9 @@ export function PollForm({ currentPoll }: PollFormProps) {
     startEnding(async () => {
       const result = await endPoll();
        if (result.error) {
-        toast({ variant: 'destructive', title: 'Error', description: result.error });
+        toast({ variant: 'destructive', title: 'Errore', description: result.error });
       } else {
-        toast({ title: 'Success', description: result.success });
+        toast({ title: 'Successo', description: result.success });
         form.reset({ title: '', questions: [{ text: '', answers: [{ text: '' }, { text: '' }] }] });
       }
     });
@@ -137,9 +137,9 @@ export function PollForm({ currentPoll }: PollFormProps) {
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader>
-        <CardTitle>Create or Manage Poll</CardTitle>
+        <CardTitle>Crea o Gestisci Sondaggio</CardTitle>
         <CardDescription>
-          {hasActivePoll ? `Current poll: "${currentPoll.title}"` : 'Create a new poll for your audience.'}
+          {hasActivePoll ? `Sondaggio attuale: "${currentPoll.title}"` : 'Crea un nuovo sondaggio per il tuo pubblico.'}
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -150,9 +150,9 @@ export function PollForm({ currentPoll }: PollFormProps) {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Poll Title</FormLabel>
+                  <FormLabel>Titolo del Sondaggio</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g. Weekly Team Feedback" {...field} />
+                    <Input placeholder="Es. Feedback settimanale del team" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -160,7 +160,7 @@ export function PollForm({ currentPoll }: PollFormProps) {
             />
 
             <div className="space-y-4">
-              <FormLabel>Questions</FormLabel>
+              <FormLabel>Domande</FormLabel>
               {questionFields.map((questionField, questionIndex) => (
                 <Card key={questionField.id} className="bg-secondary/50 p-4">
                   <div className="flex justify-between items-start mb-4">
@@ -169,9 +169,9 @@ export function PollForm({ currentPoll }: PollFormProps) {
                       name={`questions.${questionIndex}.text`}
                       render={({ field }) => (
                         <FormItem className="flex-grow">
-                          <FormLabel>Question {questionIndex + 1}</FormLabel>
+                          <FormLabel>Domanda {questionIndex + 1}</FormLabel>
                           <FormControl>
-                            <Input placeholder="What's your favorite framework?" {...field} />
+                            <Input placeholder="Qual è il tuo framework preferito?" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -184,7 +184,7 @@ export function PollForm({ currentPoll }: PollFormProps) {
                         onClick={() => removeQuestion(questionIndex)}
                         disabled={questionFields.length <= 1 || isSubmitting}
                         className="ml-2 mt-8"
-                        aria-label="Remove question"
+                        aria-label="Rimuovi domanda"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -202,34 +202,34 @@ export function PollForm({ currentPoll }: PollFormProps) {
                 className="mt-2"
               >
                 <FilePlus2 className="mr-2 h-4 w-4" />
-                Add Question
+                Aggiungi Domanda
               </Button>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={!hasActivePoll || isSubmitting || isEnding}>End Current Poll</Button>
+                <Button variant="destructive" disabled={!hasActivePoll || isSubmitting || isEnding}>Termina Sondaggio Attuale</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogTitle>Sei assolutamente sicuro?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will end the current poll, save the results, and clear the board for a new poll. This action cannot be undone.
+                    Questo terminerà il sondaggio attuale, salverà i risultati e preparerà il campo per un nuovo sondaggio. Questa azione non può essere annullata.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
                   <AlertDialogAction onClick={handleEndPoll} disabled={isEnding}>
                     {isEnding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    End Poll & Save
+                    Termina e Salva
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              {hasActivePoll ? 'Update Poll' : 'Create Poll'}
+              {hasActivePoll ? 'Aggiorna Sondaggio' : 'Crea Sondaggio'}
             </Button>
           </CardFooter>
         </form>
