@@ -6,11 +6,6 @@ import { revalidatePath } from 'next/cache';
 
 const resultsDir = path.join(process.cwd(), 'results');
 
-function isAuthenticated() {
-  const cookieStore = cookies();
-  return cookieStore.get('auth')?.value === 'true';
-}
-
 function getSafeFilePath(filename: string): string | null {
   const resultsDirResolved = path.resolve(resultsDir);
   const filePathResolved = path.resolve(resultsDir, filename);
@@ -25,7 +20,8 @@ export async function GET(
   request: Request,
   { params }: { params: { filename: string } }
 ) {
-  if (!isAuthenticated()) {
+  const cookieStore = cookies();
+  if (cookieStore.get('auth')?.value !== 'true') {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
@@ -55,7 +51,8 @@ export async function DELETE(
   request: Request,
   { params }: { params: { filename: string } }
 ) {
-  if (!isAuthenticated()) {
+  const cookieStore = cookies();
+  if (cookieStore.get('auth')?.value !== 'true') {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
