@@ -1,11 +1,15 @@
 import { cookies } from 'next/headers';
 import { PollForm } from '@/components/PollForm';
-import { getPoll } from '@/lib/actions';
+import { getPoll, getResultsFiles } from '@/lib/actions';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
 import { Login } from '@/components/Login';
 import { LogoutButton } from '@/components/LogoutButton';
+import { ShareLinkButton } from '@/components/ShareLinkButton';
+import { ResultsManager } from '@/components/ResultsManager';
+import { Separator } from '@/components/ui/separator';
+
 
 export default async function AdminPage() {
   const cookieStore = cookies();
@@ -16,19 +20,28 @@ export default async function AdminPage() {
   }
 
   const poll = await getPoll();
+  const resultsFiles = await getResultsFiles();
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
-      <header className="w-full max-w-3xl flex justify-end items-center gap-4 mb-8">
-        <Button asChild variant="outline">
-          <Link href="/">
-            <Eye className="mr-2 h-4 w-4" />
-            Vedi Sondaggio
-          </Link>
-        </Button>
-        <LogoutButton />
+      <header className="w-full max-w-3xl flex justify-between items-center mb-8">
+         <h1 className="text-2xl font-bold">Pannello Admin</h1>
+        <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Eye className="mr-2 h-4 w-4" />
+                Vedi Sondaggio
+              </Link>
+            </Button>
+            <ShareLinkButton />
+            <LogoutButton />
+        </div>
       </header>
-      <PollForm currentPoll={poll} />
+      <main className="w-full max-w-3xl flex flex-col gap-8">
+        <PollForm currentPoll={poll} />
+        <Separator />
+        <ResultsManager files={resultsFiles} />
+      </main>
     </div>
   );
 }

@@ -146,6 +146,7 @@ export async function endPoll() {
   
   const results = {
     title: poll.title,
+    endedAt: new Date().toISOString(),
     questions: poll.questions.map(q => ({
       question: q.text,
       results: q.answers.map(({ text, votes }) => ({ text, votes })),
@@ -164,4 +165,16 @@ export async function endPoll() {
   revalidatePath('/');
   revalidatePath('/admin');
   return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
+}
+
+export async function getResultsFiles(): Promise<string[]> {
+  await ensureDir(resultsDir);
+  try {
+    const files = await fs.readdir(resultsDir);
+    // Sort files by name descending to get the latest ones first
+    return files.filter(file => file.endsWith('.json')).sort((a, b) => b.localeCompare(a));
+  } catch (error) {
+    console.error("Failed to read results directory:", error);
+    return [];
+  }
 }
