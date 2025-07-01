@@ -51,33 +51,42 @@ function PollQuestion({
                     const percentage = totalVotes > 0 ? (answer.votes / totalVotes) * 100 : 0;
                     const isUserChoice = answer.id === votedAnswerId;
                     return (
-                        <div key={answer.id} className="relative w-full h-12 rounded-lg bg-muted overflow-hidden border">
-                            <div
-                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-lg ${isUserChoice ? 'bg-primary' : 'bg-secondary'}`}
-                                style={{ width: `${percentage}%` }}
-                            />
-                             <div 
-                                className="absolute inset-0 flex items-center justify-between px-4 font-medium text-secondary-foreground"
-                            >
-                                <div className="flex items-center gap-2">
-                                     <CheckCircle className="h-5 w-5 text-transparent" />
-                                    <span>{answer.text}</span>
-                                </div>
-                                <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
-                            </div>
-                            {isUserChoice && (
+                       <Button
+                            key={answer.id}
+                            variant="ghost"
+                            className="w-full h-12 p-0 m-0 rounded-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                            onClick={() => onVote(question.id, answer.id)}
+                            disabled={isVoting}
+                            aria-label={`Scegli ${answer.text}`}
+                        >
+                            <div className="relative w-full h-full rounded-lg bg-muted overflow-hidden border">
                                 <div
-                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
-                                    style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                                    className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-lg ${isUserChoice ? 'bg-primary' : 'bg-secondary'}`}
+                                    style={{ width: `${percentage}%` }}
+                                />
+                                 <div 
+                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-secondary-foreground"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-primary-foreground" />
+                                         <CheckCircle className="h-5 w-5 text-transparent" />
                                         <span>{answer.text}</span>
                                     </div>
                                     <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
                                 </div>
-                            )}
-                        </div>
+                                {isUserChoice && (
+                                    <div
+                                        className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                                        style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle className="h-5 w-5 text-primary-foreground" />
+                                            <span>{answer.text}</span>
+                                        </div>
+                                        <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
+                                    </div>
+                                )}
+                            </div>
+                        </Button>
                     );
                 })}
                 </div>
@@ -168,12 +177,17 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
     }
   }, [poll]);
 
-  const handleVote = (questionId: number, answerId: number) => {
+  const handleVote = (questionId: number, newAnswerId: number) => {
     if (!poll?.id) return;
 
+    const oldAnswerId = votedAnswers[questionId] ?? null;
+    if (oldAnswerId === newAnswerId) {
+      return;
+    }
+
     startVoting(async () => {
-      await submitVote(questionId, answerId, username);
-      const newVotedAnswers = { ...votedAnswers, [questionId]: answerId };
+      await submitVote(questionId, newAnswerId, oldAnswerId, username);
+      const newVotedAnswers = { ...votedAnswers, [questionId]: newAnswerId };
       try {
         const dataToStore = {
             votes: newVotedAnswers,
@@ -184,8 +198,10 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
         console.error("Failed to write to localStorage", error);
       }
       setVotedAnswers(newVotedAnswers);
+      
+      const toastMessage = oldAnswerId !== null ? 'Il tuo voto è stato aggiornato!' : 'Voto Inviato!';
       toast({
-        title: 'Voto Inviato!',
+        title: toastMessage,
         description: 'Grazie per la tua partecipazione.',
         className: 'bg-primary text-primary-foreground',
       });

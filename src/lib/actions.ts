@@ -404,26 +404,35 @@ export async function getPoll(username: string): Promise<Poll | null> {
 }
 
 
-export async function submitVote(questionId: number, answerId: number, username: string) {
+export async function submitVote(questionId: number, newAnswerId: number, oldAnswerId: number | null, username: string) {
   const poll = await getPoll(username);
   if (!poll?.id) return { error: 'Nessun sondaggio attivo.' };
 
   const question = poll.questions.find(q => q.id === questionId);
   if (!question) return { error: 'Domanda non valida.' };
   
-  const answer = question.answers.find(a => a.id === answerId);
-  if (answer) {
-    answer.votes += 1;
-    try {
-        const filePath = getPollFilePath(username, poll.id);
-        await writePollFile(filePath, poll);
-    } catch (error) {
-        console.error("Failed to write poll data on vote:", error);
-        return { error: "Impossibile salvare il voto. Si è verificato un errore del server." };
-    }
-    return { success: 'Voto inviato!' };
+  const newAnswer = question.answers.find(a => a.id === newAnswerId);
+  if (!newAnswer) return { error: 'Nuova risposta non valida.' };
+
+  // Increment the new answer
+  newAnswer.votes += 1;
+
+  // Decrement the old answer if it exists
+  if (oldAnswerId !== null) {
+      const oldAnswer = question.answers.find(a => a.id === oldAnswerId);
+      if (oldAnswer && oldAnswer.votes > 0) {
+          oldAnswer.votes -= 1;
+      }
   }
-  return { error: 'Risposta non valida.' };
+
+  try {
+    const filePath = getPollFilePath(username, poll.id);
+    await writePollFile(filePath, poll);
+  } catch (error) {
+    console.error("Failed to write poll data on vote:", error);
+    return { error: "Impossibile salvare il voto. Si è verificato un errore del server." };
+  }
+  return { success: true };
 }
 
 
