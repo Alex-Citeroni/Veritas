@@ -32,49 +32,49 @@ function PollQuestion({
   }, [question.answers, hasVoted]);
   
   return (
-    <Card className="w-full mx-auto shadow-md mb-6 border">
+    <Card className="w-full mx-auto shadow-lg mb-8 border-t-4 border-t-primary">
         <CardHeader className="text-left">
-            <CardTitle className="text-2xl font-semibold flex items-start gap-2">
-              <HelpCircle className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+            <CardTitle className="text-xl font-semibold flex items-start gap-3 text-card-foreground">
+              <HelpCircle className="h-8 w-8 text-primary/80 mt-0 flex-shrink-0" />
               <span>{question.text}</span>
             </CardTitle>
-            <CardDescription className="flex items-center gap-2 pt-2 pl-8">
-                <BarChart2 className="h-4 w-4" />
-                Voti totali: {totalVotes}
-            </CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+                <BarChart2 className="h-4 w-4" />
+                <span>Voti totali: {totalVotes}</span>
+            </div>
+            <div className="space-y-3">
             {hasVoted ? (
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3">
                 {sortedAnswers.map((answer) => {
                     const percentage = totalVotes > 0 ? (answer.votes / totalVotes) * 100 : 0;
                     const isUserChoice = answer.id === votedAnswerId;
                     return (
-                        <div key={answer.id} className="relative w-full h-12 rounded-md bg-secondary overflow-hidden border border-border">
+                        <div key={answer.id} className="relative w-full h-12 rounded-lg bg-muted overflow-hidden border">
                             <div
-                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
+                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out rounded-lg ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
                                 style={{ width: `${percentage}%` }}
                             />
                              <div 
                                 className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary"
                             >
                                 <div className="flex items-center gap-2">
-                                     <CheckCircle className={`h-5 w-5 ${isUserChoice ? 'text-transparent' : 'text-transparent'}`} />
+                                     <CheckCircle className="h-5 w-5 text-transparent" />
                                     <span>{answer.text}</span>
                                 </div>
-                                <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                                <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
                             </div>
                             {isUserChoice && (
                                 <div
-                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-accent-foreground"
                                     style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-primary-foreground" />
+                                        <CheckCircle className="h-5 w-5 text-accent-foreground" />
                                         <span>{answer.text}</span>
                                     </div>
-                                    <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                                    <span className="font-mono">{answer.votes} ({percentage.toFixed(0)}%)</span>
                                 </div>
                             )}
                         </div>
@@ -86,11 +86,11 @@ function PollQuestion({
                 <Button
                     key={answer.id}
                     onClick={() => onVote(question.id, answer.id)}
-                    className="w-full h-14 text-lg justify-center"
-                    variant="outline"
+                    className="w-full h-14 text-lg justify-center transition-transform duration-200 hover:scale-[1.02]"
+                    variant="secondary"
                     disabled={isVoting}
                 >
-                    {isVoting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isVoting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {answer.text}
                 </Button>
                 ))
@@ -207,11 +207,13 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-        <div className="text-center">
-            <Sparkles className="w-16 h-16 text-primary mx-auto" />
-            <h1 className="text-4xl font-bold mt-2 mb-2 text-primary">{poll.title}</h1>
-            <p className="text-center text-muted-foreground mb-8">I risultati si aggiornano in tempo reale. Puoi votare per ogni domanda.</p>
-        </div>
+      <div className="text-center mb-12">
+          <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
+            <Sparkles className="w-12 h-12 text-primary" />
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-primary">{poll.title}</h1>
+          <p className="mt-4 text-lg text-muted-foreground">I risultati si aggiornano in tempo reale. Vota per ogni domanda.</p>
+      </div>
 
         {poll.questions.map((question) => (
             <PollQuestion 
