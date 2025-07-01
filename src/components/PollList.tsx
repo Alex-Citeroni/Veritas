@@ -1,7 +1,6 @@
 'use client';
 
 import type { Poll } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -26,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, Edit, PlayCircle, StopCircle, Share2, Eye, List, Download, FileText } from 'lucide-react';
+import { Loader2, Trash2, Edit, PlayCircle, StopCircle, Eye, Download, FileText } from 'lucide-react';
 import { ShareLinkButton } from './ShareLinkButton';
 
 type PollWithResults = Poll & { results: string[] };
@@ -120,11 +119,11 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
   const { toast } = useToast();
   
   const handleAction = async (
-    action: (id: string, owner: string) => Promise<{ success: boolean; error?: string }>,
+    action: (id: string) => Promise<{ success: boolean; error?: string }>,
     successMessage: string
   ) => {
     startTransition(async () => {
-      const result = await action(poll.id, poll.owner);
+      const result = await action(poll.id);
       if (result.success) {
         toast({ title: 'Successo!', description: successMessage });
         router.refresh();
@@ -140,7 +139,7 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
 
   return (
     <AccordionItem value={poll.id} className="border-b-0">
-      <div className="border rounded-lg mb-2 overflow-hidden">
+      <div className="border rounded-lg mb-2 overflow-hidden bg-secondary/20">
         <AccordionTrigger className="p-4 hover:no-underline hover:bg-secondary/50 data-[state=open]:bg-secondary/50 data-[state=open]:border-b">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3 overflow-hidden">
@@ -149,8 +148,8 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
             </div>
           </div>
         </AccordionTrigger>
-        <AccordionContent className="p-4 bg-secondary/20">
-            <div className="flex items-center gap-2 flex-shrink-0 mb-4 pb-4 border-b">
+        <AccordionContent className="p-4 bg-background">
+            <div className="flex items-center gap-2 flex-wrap mb-4 pb-4 border-b">
               {poll.isActive ? (
                 <Button size="sm" variant="outline" onClick={() => handleAction(deactivatePoll, 'Sondaggio disattivato.')} disabled={isPending}>
                   {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <StopCircle className="h-4 w-4" />}
@@ -172,8 +171,9 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="icon" disabled={isPending}>
+                  <Button variant="destructive" size="sm" disabled={isPending}>
                     <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Elimina</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -206,17 +206,7 @@ export function PollList({ polls, activePollId }: PollListProps) {
   const activePoll = polls.find(p => p.id === activePollId);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-            <List />
-            I Tuoi Sondaggi
-        </CardTitle>
-        <CardDescription>
-          Gestisci i tuoi sondaggi. Puoi attivarne solo uno alla volta. Espandi ogni sondaggio per vedere i risultati archiviati.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="p-2 sm:p-4">
         {activePoll && (
              <div className="p-4 rounded-lg border border-primary bg-primary/10 mb-6">
                 <h3 className="text-lg font-semibold text-primary mb-2">Sondaggio Attivo</h3>
@@ -226,14 +216,14 @@ export function PollList({ polls, activePollId }: PollListProps) {
                          <Button asChild variant="outline" size="sm">
                             <Link href={`/${activePoll.owner}`}>
                             <Eye className="mr-2 h-4 w-4" />
-                            Vedi Live
+                            Live
                             </Link>
                         </Button>
                         <ShareLinkButton username={activePoll.owner} />
                         <Button asChild variant="outline" size="sm">
                             <a href="/api/results/current" download>
                                 <Download className="mr-2 h-4 w-4" />
-                                Risultati Live
+                                Live
                             </a>
                         </Button>
                     </div>
@@ -248,12 +238,11 @@ export function PollList({ polls, activePollId }: PollListProps) {
             ))}
           </Accordion>
         ) : (
-          <div className="text-center text-muted-foreground py-8">
-            <p>Non hai ancora creato nessun sondaggio.</p>
-            <p>Usa il modulo qui sopra per iniziare!</p>
+          <div className="text-center text-muted-foreground py-8 px-4">
+            <p className="mb-2 font-medium">Nessun sondaggio trovato.</p>
+            <p className="text-sm">Usa il pulsante "Nuovo" in alto per crearne uno.</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
