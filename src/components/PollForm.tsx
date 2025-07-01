@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition, useEffect } from 'react';
+import { useTransition } from 'react';
 import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -241,7 +241,7 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const isEditMode = !!pollId && !!currentPoll;
+  const isEditMode = !!pollId;
 
   const defaultFormValues = {
     title: '',
@@ -250,24 +250,18 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
 
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollFormSchema),
-    defaultValues: defaultFormValues,
+    defaultValues: (isEditMode && currentPoll)
+      ? {
+          title: currentPoll.title || '',
+          questions: currentPoll.questions?.length
+            ? currentPoll.questions.map(q => ({
+                text: q.text,
+                answers: q.answers.map(a => ({ text: a.text })),
+              }))
+            : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
+        }
+      : defaultFormValues,
   });
-
-  useEffect(() => {
-    if (isEditMode && currentPoll) {
-      form.reset({
-        title: currentPoll.title || '',
-        questions: currentPoll.questions?.length
-          ? currentPoll.questions.map(q => ({
-              text: q.text,
-              answers: q.answers.map(a => ({ text: a.text })),
-            }))
-          : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
-      });
-    } else {
-      form.reset(defaultFormValues);
-    }
-  }, [currentPoll, isEditMode, form]);
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion, move: moveQuestion } = useFieldArray({
     control: form.control,
@@ -319,7 +313,7 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
       <CardHeader>
         <CardTitle>{isEditMode ? 'Modifica Sondaggio' : 'Crea Nuovo Sondaggio'}</CardTitle>
         <CardDescription>
-          {isEditMode ? `Stai modificando il sondaggio: "${currentPoll?.title}"` : 'Compila i campi per creare un nuovo sondaggio.'}
+          {isEditMode && currentPoll ? `Stai modificando il sondaggio: "${currentPoll?.title}"` : 'Compila i campi per creare un nuovo sondaggio.'}
         </CardDescription>
       </CardHeader>
       <Form {...form}>

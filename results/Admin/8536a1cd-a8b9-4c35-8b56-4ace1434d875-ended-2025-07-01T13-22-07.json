@@ -1,24 +1,23 @@
 {
-  "id": "8536a1cd-a8b9-4c35-8b56-4ace1434d875",
+  "pollId": "8536a1cd-a8b9-4c35-8b56-4ace1434d875",
   "title": "Provaimo",
   "owner": "Admin",
-  "isActive": false,
+  "timestamp": "2025-07-01T13:22:07.943Z",
+  "status": "ended",
   "questions": [
     {
-      "id": 0,
-      "text": "Prima domanda",
-      "answers": [
+      "question": "Prima domanda",
+      "results": [
         {
-          "id": 0,
           "text": "Risposta 1",
           "votes": 0
         },
         {
-          "id": 1,
           "text": "Risposta 2",
           "votes": 0
         }
-      ]
+      ],
+      "totalVotes": 0
     }
   ]
 }

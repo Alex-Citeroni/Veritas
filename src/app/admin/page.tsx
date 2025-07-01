@@ -19,7 +19,13 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
   
   let pollToEdit = null;
   if (pollIdToEdit) {
-    pollToEdit = await getPollById(pollIdToEdit, username);
+    try {
+      pollToEdit = await getPollById(pollIdToEdit, username);
+    } catch (error) {
+      console.error(`Failed to load poll for editing (id: ${pollIdToEdit}).`, error);
+      // Gracefully fail by leaving pollToEdit as null. This prevents a page crash.
+      pollToEdit = null;
+    }
   }
 
   const activePoll = polls.find(p => p.isActive) || null;
