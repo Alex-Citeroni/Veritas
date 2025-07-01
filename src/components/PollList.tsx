@@ -138,8 +138,6 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
     });
   };
 
-  const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
-
   return (
     <AccordionItem value={poll.id} className="border-b-0">
       <div className="border rounded-lg mb-2 overflow-hidden">
@@ -149,7 +147,10 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
               <span className="font-medium truncate" title={poll.title}>{poll.title}</span>
               {poll.isActive && <Badge>Attivo</Badge>}
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0" onClick={stopPropagation}>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="p-4 bg-secondary/20">
+            <div className="flex items-center gap-2 flex-shrink-0 mb-4 pb-4 border-b">
               {poll.isActive ? (
                 <Button size="sm" variant="outline" onClick={() => handleAction(deactivatePoll, 'Sondaggio disattivato.')} disabled={isPending}>
                   {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <StopCircle className="h-4 w-4" />}
@@ -192,9 +193,6 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="p-4 bg-secondary/20">
             <h4 className="font-semibold">Risultati Archiviati</h4>
             <ResultFileList files={poll.results} />
         </AccordionContent>
