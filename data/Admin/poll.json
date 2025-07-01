@@ -1,1 +1,23 @@
-{"title":null,"questions":[],"owner":"Admin"}
+{
+  "id": "056118a1-97bf-4960-87cb-f666494df91c",
+  "title": "Proviamo",
+  "owner": "Admin",
+  "questions": [
+    {
+      "id": 0,
+      "text": "Ciao, come va?",
+      "answers": [
+        {
+          "id": 0,
+          "text": "Tutto bene",
+          "votes": 0
+        },
+        {
+          "id": 1,
+          "text": "Male male",
+          "votes": 0
+        }
+      ]
+    }
+  ]
+}

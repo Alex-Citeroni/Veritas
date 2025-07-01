@@ -193,7 +193,6 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     }
 
     await loginUser(username);
-    redirect('/admin');
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT' && mode === 'login') {
       return { error: 'Utente non trovato.' };
@@ -201,6 +200,7 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     console.error(`Authentication failed for user ${username}:`, error);
     return { error: 'Si è verificato un errore del server. Riprova.' };
   }
+  redirect('/admin');
 }
 
 export async function logout() {
@@ -210,7 +210,7 @@ export async function logout() {
 
 // --- Poll Actions ---
 
-export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean, username: string) {
+export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean, username: string): Promise<{ error: string } | void> {
   if (!username) {
     throw new Error("Utente non autenticato.");
   }

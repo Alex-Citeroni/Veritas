@@ -206,11 +206,12 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
 
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
-      try {
-        await createPoll(data, hasActivePoll, username);
-      } catch (e) {
-        const error = e as Error;
-         toast({ variant: 'destructive', title: 'Errore', description: error.message || "Qualcosa è andato storto." });
+      // Don't wrap createPoll in a try/catch.
+      // Redirects work by throwing an error that the framework catches.
+      // The action itself returns an error object for controlled errors.
+      const result = await createPoll(data, hasActivePoll, username);
+      if (result?.error) {
+        toast({ variant: 'destructive', title: 'Errore', description: result.error });
       }
     });
   };
