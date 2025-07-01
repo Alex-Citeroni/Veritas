@@ -119,11 +119,11 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
   const { toast } = useToast();
   
   const handleAction = async (
-    action: (id: string) => Promise<{ success: boolean; error?: string }>,
+    action: (id: string, username: string) => Promise<{ success: boolean; error?: string }>,
     successMessage: string
   ) => {
     startTransition(async () => {
-      const result = await action(poll.id);
+      const result = await action(poll.id, poll.owner);
       if (result.success) {
         toast({ title: 'Successo!', description: successMessage });
         router.refresh();
@@ -223,7 +223,7 @@ export function PollList({ polls, activePollId }: PollListProps) {
                         <Button asChild variant="outline" size="sm">
                             <a href="/api/results/current" download>
                                 <Download className="mr-2 h-4 w-4" />
-                                Live
+                                Risultati Live
                             </a>
                         </Button>
                     </div>
