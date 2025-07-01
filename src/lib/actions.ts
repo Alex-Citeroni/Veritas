@@ -4,6 +4,8 @@ import fs from 'fs/promises';
 import path from 'path';
 import { type Poll } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const dataDir = path.join(process.cwd(), 'data');
 const pollFilePath = path.join(dataDir, 'poll.json');
@@ -43,6 +45,27 @@ async function getPollData(): Promise<Poll> {
 async function writePollData(poll: Poll) {
   await ensurePollFile();
   await fs.writeFile(pollFilePath, JSON.stringify(poll, null, 2), 'utf-8');
+}
+
+export async function login(formData: FormData) {
+  const password = formData.get('password') as string;
+
+  if (password === 'Leonardo') {
+    cookies().set('auth', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24, // 1 day
+      path: '/',
+    });
+    redirect('/admin');
+  } else {
+    return { error: 'Password errata.' };
+  }
+}
+
+export async function logout() {
+  cookies().delete('auth');
+  redirect('/admin');
 }
 
 export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }) {
