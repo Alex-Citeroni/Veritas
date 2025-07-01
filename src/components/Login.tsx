@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { checkUsername, loginAction, registerAction } from '@/lib/actions';
-import { Loader2, KeyRound, User, UserPlus } from 'lucide-react';
+import { Loader2, KeyRound, User, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 type LoginStep = 'enter-username' | 'login-password' | 'register-password';
 
@@ -15,6 +16,8 @@ export function Login() {
   const [isPending, startTransition] = useTransition();
   const [step, setStep] = useState<LoginStep>('enter-username');
   const [username, setUsername] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const handleUsernameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,6 +60,8 @@ export function Login() {
       const result = await action(formData);
       if (result?.error) {
         setError(result.error);
+      } else if (result?.success) {
+        router.push('/admin');
       }
     });
   };
@@ -82,29 +87,53 @@ export function Login() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   disabled={isPending}
                   autoComplete={step === 'login-password' ? "current-password" : "new-password"}
                   autoFocus
+                  className="pr-10"
                 />
+                 <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-1 right-1 h-7 w-7 text-muted-foreground hover:bg-transparent"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
               </div>
               {step === 'register-password' && (
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                     <Label htmlFor="confirmPassword">Conferma Password</Label>
                     <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                    disabled={isPending}
-                    autoComplete="new-password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      disabled={isPending}
+                      autoComplete="new-password"
+                      className="pr-10"
                     />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute bottom-1 right-1 h-7 w-7 text-muted-foreground hover:bg-transparent"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                        tabIndex={-1}
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
                 </div>
               )}
               {error && (

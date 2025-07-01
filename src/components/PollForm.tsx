@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -187,6 +188,7 @@ export function PollForm({ currentPoll }: PollFormProps) {
   const [isSubmitting, startSubmitting] = useTransition();
   const [isEnding, startEnding] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollFormSchema),
@@ -208,6 +210,8 @@ export function PollForm({ currentPoll }: PollFormProps) {
       const result = await createPoll(data, hasActivePoll);
       if (result?.error) {
         toast({ variant: 'destructive', title: 'Errore', description: result.error });
+      } else if (result?.success && result.username) {
+        router.push(`/${result.username}`);
       }
     });
   };

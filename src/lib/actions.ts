@@ -71,7 +71,7 @@ async function ensurePollFile(username: string) {
   try {
     await fs.access(pollFilePath);
   } catch {
-    await fs.writeFile(pollFilePath, JSON.stringify({ title: null, questions: [], owner: username }), 'utf-8');
+    await fs.writeFile(pollFilePath, JSON.stringify({ id: null, title: null, questions: [], owner: username }), 'utf-8');
   }
 }
 
@@ -162,7 +162,6 @@ async function loginUser(username: string) {
         maxAge: 60 * 60 * 24, // 1 day
         path: '/',
     });
-    redirect('/admin');
 }
 
 export async function loginAction(formData: FormData) {
@@ -180,6 +179,7 @@ export async function loginAction(formData: FormData) {
         const isValid = await verifyPassword(password, passwordHash);
         if (isValid) {
             await loginUser(username);
+            return { success: true };
         } else {
             return { error: 'Password non corretta.' };
         }
@@ -204,6 +204,7 @@ export async function registerAction(formData: FormData) {
     await fs.writeFile(userFilePath, JSON.stringify({ username, passwordHash }));
     
     await loginUser(username);
+    return { success: true };
 }
 
 
@@ -268,7 +269,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
   revalidatePath(`/${username}`);
   revalidatePath('/admin');
   
-  redirect(`/${username}`);
+  return { success: true, username };
 }
 
 export async function getPoll(usernameParam?: string): Promise<Poll> {
