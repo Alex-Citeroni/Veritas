@@ -11,11 +11,27 @@
         {
           "id": 0,
           "text": "Risposta 1",
-          "votes": 0
+          "votes": 1
         },
         {
           "id": 1,
           "text": "Risposta 2",
+          "votes": 0
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "text": "Doamnde",
+      "answers": [
+        {
+          "id": 0,
+          "text": "sad",
+          "votes": 1
+        },
+        {
+          "id": 1,
+          "text": "das",
           "votes": 0
         }
       ]

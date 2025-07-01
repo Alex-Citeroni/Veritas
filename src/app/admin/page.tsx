@@ -5,7 +5,9 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { PollForm } from '@/components/PollForm';
 import { PollList } from '@/components/PollList';
 import { Separator } from '@/components/ui/separator';
-import { ResultsManager } from '@/components/ResultsManager';
+import type { Poll } from '@/lib/types';
+
+export type PollWithResults = Poll & { results: string[] };
 
 export default async function AdminPage({ searchParams }: { searchParams: { edit?: string } }) {
   const cookieStore = cookies();
@@ -15,8 +17,16 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
     return <Login />;
   }
 
-  const polls = await listPolls(username);
-  const resultFiles = await getResultsFiles(username);
+  const allPolls = await listPolls(username);
+  const allResultFiles = await getResultsFiles(username);
+  
+  const pollsWithResults: PollWithResults[] = allPolls.map(poll => ({
+    ...poll,
+    results: allResultFiles
+      .filter(file => file.startsWith(poll.id))
+      .sort((a, b) => b.localeCompare(a)), // Sort descending to show newest first
+  }));
+
   const pollIdToEdit = searchParams.edit;
   
   let pollToEdit = null;
@@ -30,7 +40,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
     }
   }
 
-  const activePoll = polls.find(p => p.isActive) || null;
+  const activePoll = allPolls.find(p => p.isActive) || null;
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -46,9 +56,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
           pollId={pollIdToEdit}
         />
         <Separator />
-        <PollList polls={polls} activePollId={activePoll?.id} />
-        <Separator />
-        <ResultsManager files={resultFiles} hasActivePoll={!!activePoll} />
+        <PollList polls={pollsWithResults} activePollId={activePoll?.id} />
       </main>
     </div>
   );
