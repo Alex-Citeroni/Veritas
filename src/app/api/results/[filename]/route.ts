@@ -33,7 +33,7 @@ export async function GET(
   const filePath = getSafeFilePath(filename);
 
   if (!filePath) {
-    return new NextResponse('Invalid filename', { status: 400 });
+    return NextResponse.json({ message: 'Invalid filename' }, { status: 400 });
   }
 
   try {
@@ -44,10 +44,10 @@ export async function GET(
     return new NextResponse(fileContent, { status: 200, headers });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return new NextResponse(JSON.stringify({ message: 'File not found' }), { status: 404 });
+        return NextResponse.json({ message: 'File not found' }, { status: 404 });
     }
     console.error(`Failed to read file ${filename}:`, error);
-    return new NextResponse(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -56,25 +56,25 @@ export async function DELETE(
   { params }: { params: { filename: string } }
 ) {
   if (!isAuthenticated()) {
-    return new NextResponse(JSON.stringify({ message: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { filename } = params;
   const filePath = getSafeFilePath(filename);
 
   if (!filePath) {
-    return new NextResponse(JSON.stringify({ message: 'Invalid filename' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    return NextResponse.json({ message: 'Invalid filename' }, { status: 400 });
   }
 
   try {
     await fs.unlink(filePath);
     revalidatePath('/admin');
-    return new NextResponse(JSON.stringify({ message: 'File deleted successfully' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return NextResponse.json({ message: 'File deleted successfully' }, { status: 200 });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return new NextResponse(JSON.stringify({ message: 'File not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+      return NextResponse.json({ message: 'File not found' }, { status: 404 });
     }
     console.error(`Failed to delete file ${filename}:`, error);
-    return new NextResponse(JSON.stringify({ message: 'Internal Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
