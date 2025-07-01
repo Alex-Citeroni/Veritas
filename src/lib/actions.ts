@@ -16,11 +16,6 @@ const resultsBaseDir = path.join(process.cwd(), 'results');
 
 // --- User and Path Helpers ---
 
-function getCurrentUser(): string | null {
-    const cookieStore = cookies();
-    return cookieStore.get('username')?.value ?? null;
-}
-
 function getUserDir(username: string): string {
     return path.join(dataDir, username);
 }
@@ -215,8 +210,7 @@ export async function logout() {
 
 // --- Poll Actions ---
 
-export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean) {
-  const username = getCurrentUser();
+export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean, username: string) {
   if (!username) {
     throw new Error("Utente non autenticato.");
   }
@@ -272,8 +266,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
   redirect(`/${username}`);
 }
 
-export async function getPoll(usernameParam?: string): Promise<Poll> {
-  const username = usernameParam ?? getCurrentUser();
+export async function getPoll(username: string): Promise<Poll> {
   if (!username) {
     return { id: null, title: null, questions: [], owner: null };
   }
@@ -302,8 +295,7 @@ export async function submitVote(questionId: number, answerId: number, username:
   return { error: 'Risposta non valida.' };
 }
 
-export async function endPoll() {
-    const username = getCurrentUser();
+export async function endPoll(username: string) {
     if (!username) {
       return { error: "Utente non autenticato." };
     }
@@ -327,8 +319,7 @@ export async function endPoll() {
     }
 }
 
-export async function getResultsFiles(): Promise<string[]> {
-  const username = getCurrentUser();
+export async function getResultsFiles(username: string): Promise<string[]> {
   if (!username) {
     return [];
   }

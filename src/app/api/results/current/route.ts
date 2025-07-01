@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const poll = await getPoll();
+    const poll = await getPoll(username);
 
     if (!poll.title) {
       return new NextResponse(

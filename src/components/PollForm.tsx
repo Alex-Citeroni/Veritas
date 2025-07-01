@@ -56,6 +56,7 @@ type PollFormValues = z.infer<typeof pollFormSchema>;
 
 interface PollFormProps {
   currentPoll: Poll;
+  username: string;
 }
 
 interface SortableAnswerProps {
@@ -183,7 +184,7 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
   );
 }
 
-export function PollForm({ currentPoll }: PollFormProps) {
+export function PollForm({ currentPoll, username }: PollFormProps) {
   const [isSubmitting, startSubmitting] = useTransition();
   const [isEnding, startEnding] = useTransition();
   const { toast } = useToast();
@@ -206,7 +207,7 @@ export function PollForm({ currentPoll }: PollFormProps) {
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
       try {
-        await createPoll(data, hasActivePoll);
+        await createPoll(data, hasActivePoll, username);
       } catch (e) {
         const error = e as Error;
          toast({ variant: 'destructive', title: 'Errore', description: error.message || "Qualcosa è andato storto." });
@@ -216,7 +217,7 @@ export function PollForm({ currentPoll }: PollFormProps) {
   
   const handleEndPoll = () => {
     startEnding(async () => {
-      const result = await endPoll();
+      const result = await endPoll(username);
        if (result.error) {
         toast({ variant: 'destructive', title: 'Errore', description: result.error });
       } else {
