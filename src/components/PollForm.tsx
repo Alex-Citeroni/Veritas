@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useEffect } from 'react';
 import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -241,15 +241,33 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
   const { toast } = useToast();
   const router = useRouter();
 
-  const isEditMode = !!currentPoll;
+  const isEditMode = !!pollId && !!currentPoll;
+
+  const defaultFormValues = {
+    title: '',
+    questions: [{ text: '', answers: [{ text: '' }, { text: '' }] }],
+  };
 
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollFormSchema),
-    defaultValues: {
-      title: currentPoll?.title || '',
-      questions: currentPoll?.questions?.length ? currentPoll.questions.map(q => ({ text: q.text, answers: q.answers.map(a => ({ text: a.text })) })) : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
-    },
+    defaultValues: defaultFormValues,
   });
+
+  useEffect(() => {
+    if (isEditMode && currentPoll) {
+      form.reset({
+        title: currentPoll.title || '',
+        questions: currentPoll.questions?.length
+          ? currentPoll.questions.map(q => ({
+              text: q.text,
+              answers: q.answers.map(a => ({ text: a.text })),
+            }))
+          : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
+      });
+    } else {
+      form.reset(defaultFormValues);
+    }
+  }, [currentPoll, isEditMode, form]);
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion, move: moveQuestion } = useFieldArray({
     control: form.control,
@@ -258,29 +276,20 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
   
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
-      try {
-        const result = await savePoll(data, username, pollId);
-        
-        if (result.success) {
-            toast({
-                title: 'Successo!',
-                description: `Sondaggio ${isEditMode ? 'aggiornato' : 'creato'} con successo.`,
-            });
-            router.push('/admin');
-        } else {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Errore', 
-                description: result.error || "Si è verificato un errore sconosciuto." 
-            });
-        }
-      } catch (error) {
-        console.error("An unexpected error occurred in PollForm onSubmit:", error);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Errore Imprevisto', 
-            description: "Si è verificato un errore di comunicazione. Riprova." 
-        });
+      const result = await savePoll(data, username, pollId);
+      
+      if (result.success) {
+          toast({
+              title: 'Successo!',
+              description: `Sondaggio ${isEditMode ? 'aggiornato' : 'creato'} con successo.`,
+          });
+          router.push('/admin');
+      } else {
+          toast({ 
+              variant: 'destructive', 
+              title: 'Errore', 
+              description: result.error || "Si è verificato un errore sconosciuto." 
+          });
       }
     });
   };
@@ -310,7 +319,7 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
       <CardHeader>
         <CardTitle>{isEditMode ? 'Modifica Sondaggio' : 'Crea Nuovo Sondaggio'}</CardTitle>
         <CardDescription>
-          {isEditMode ? `Stai modificando il sondaggio: "${currentPoll.title}"` : 'Compila i campi per creare un nuovo sondaggio.'}
+          {isEditMode ? `Stai modificando il sondaggio: "${currentPoll?.title}"` : 'Compila i campi per creare un nuovo sondaggio.'}
         </CardDescription>
       </CardHeader>
       <Form {...form}>
