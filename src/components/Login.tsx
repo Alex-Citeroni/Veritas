@@ -1,15 +1,26 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { checkUsername, loginAction, registerAction } from '@/lib/actions';
+import { checkUsername, authenticateAction } from '@/lib/actions';
 import { Loader2, KeyRound, User, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 type LoginStep = 'enter-username' | 'login-password' | 'register-password';
+
+function AuthSubmitButton({ step }: { step: LoginStep }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full" disabled={pending}>
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {step === 'login-password' ? 'Accedi' : 'Registrati e Accedi'}
+        </Button>
+    );
+}
 
 export function Login() {
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +29,8 @@ export function Login() {
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const router = useRouter();
+  
+  const [authState, formAction] = useFormState(authenticateAction, null);
 
   const handleUsernameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,32 +53,6 @@ export function Login() {
     });
   };
 
-  const handleAuthSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const formData = new FormData(event.currentTarget);
-    formData.set('username', username);
-
-    if (step === 'register-password') {
-        const password = formData.get('password') as string;
-        const confirmPassword = formData.get('confirmPassword') as string;
-        if (password !== confirmPassword) {
-            setError('Le password non coincidono.');
-            return;
-        }
-    }
-
-    startTransition(async () => {
-      const action = step === 'login-password' ? loginAction : registerAction;
-      const result = await action(formData);
-      if (result?.error) {
-        setError(result.error);
-      } else if (result?.success) {
-        router.refresh();
-      }
-    });
-  };
-
   const resetFlow = () => {
     setError(null);
     setUsername('');
@@ -79,7 +65,9 @@ export function Login() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Card className="w-full max-w-sm">
-          <form onSubmit={handleAuthSubmit}>
+          <form action={formAction}>
+            <input type="hidden" name="username" value={username} />
+            <input type="hidden" name="mode" value={step === 'login-password' ? 'login' : 'register'} />
             <CardHeader className="text-center">
               <CardTitle className="text-2xl flex items-center justify-center gap-2">
                  {step === 'login-password' ? <KeyRound className="h-6 w-6" /> : <UserPlus className="h-6 w-6" />}
@@ -97,7 +85,6 @@ export function Login() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  disabled={isPending}
                   autoComplete={step === 'login-password' ? "current-password" : "new-password"}
                   autoFocus
                   className="pr-10"
@@ -122,7 +109,6 @@ export function Login() {
                       name="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
                       required
-                      disabled={isPending}
                       autoComplete="new-password"
                       className="pr-10"
                     />
@@ -139,16 +125,13 @@ export function Login() {
                     </Button>
                 </div>
               )}
-              {error && (
-                <p className="text-sm font-medium text-destructive">{error}</p>
+              {authState?.error && (
+                <p className="text-sm font-medium text-destructive">{authState.error}</p>
               )}
             </CardContent>
             <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {step === 'login-password' ? 'Accedi' : 'Registrati e Accedi'}
-              </Button>
-               <Button variant="link" size="sm" onClick={resetFlow} type="button" disabled={isPending}>
+              <AuthSubmitButton step={step} />
+               <Button variant="link" size="sm" onClick={resetFlow} type="button">
                 Usa un altro username
               </Button>
             </CardFooter>

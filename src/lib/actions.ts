@@ -164,49 +164,49 @@ async function loginUser(username: string) {
     });
 }
 
-export async function loginAction(formData: FormData) {
-    const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+export async function authenticateAction(prevState: any, formData: FormData) {
+  const mode = formData.get('mode') as 'login' | 'register';
+  const username = formData.get('username') as string;
+  const password = formData.get('password') as string;
 
-    if (!username || !password) {
-        return { error: 'Username e password sono obbligatori.' };
+  if (!username || !password) {
+    return { error: 'Username e password sono obbligatori.' };
+  }
+
+  if (mode === 'register') {
+    const confirmPassword = formData.get('confirmPassword') as string;
+    if (password !== confirmPassword) {
+      return { error: 'Le password non coincidono.' };
+    }
+  }
+
+  try {
+    if (mode === 'login') {
+      const userFilePath = getUserFilePath(username);
+      const userData = await fs.readFile(userFilePath, 'utf-8');
+      const { passwordHash } = JSON.parse(userData);
+      const isValid = await verifyPassword(password, passwordHash);
+      if (!isValid) {
+        return { error: 'Password non corretta.' };
+      }
+    } else { // register
+      const userDir = getUserDir(username);
+      await ensureDir(userDir);
+      const userFilePath = getUserFilePath(username);
+      const passwordHash = await hashPassword(password);
+      await fs.writeFile(userFilePath, JSON.stringify({ username, passwordHash }));
     }
 
-    const userFilePath = getUserFilePath(username);
-    try {
-        const userData = await fs.readFile(userFilePath, 'utf-8');
-        const { passwordHash } = JSON.parse(userData);
-        const isValid = await verifyPassword(password, passwordHash);
-        if (isValid) {
-            await loginUser(username);
-            return { success: true };
-        } else {
-            return { error: 'Password non corretta.' };
-        }
-    } catch (error) {
-        return { error: 'Utente non trovato o errore del server.' };
-    }
-}
-
-export async function registerAction(formData: FormData) {
-    const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
-
-    if (!username || !password) {
-        return { error: 'Username e password sono obbligatori.' };
-    }
-    
-    const userDir = getUserDir(username);
-    await ensureDir(userDir);
-    const userFilePath = getUserFilePath(username);
-
-    const passwordHash = await hashPassword(password);
-    await fs.writeFile(userFilePath, JSON.stringify({ username, passwordHash }));
-    
     await loginUser(username);
-    return { success: true };
+    redirect('/admin');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT' && mode === 'login') {
+      return { error: 'Utente non trovato.' };
+    }
+    console.error(`Authentication failed for user ${username}:`, error);
+    return { error: 'Si è verificato un errore del server. Riprova.' };
+  }
 }
-
 
 export async function logout() {
   cookies().delete('username');
@@ -218,7 +218,7 @@ export async function logout() {
 export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean) {
   const username = getCurrentUser();
   if (!username) {
-    return { error: "Utente non autenticato." };
+    throw new Error("Utente non autenticato.");
   }
 
   const { title, questions } = data;
@@ -269,7 +269,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
   revalidatePath(`/${username}`);
   revalidatePath('/admin');
   
-  return { success: true, username };
+  redirect(`/${username}`);
 }
 
 export async function getPoll(usernameParam?: string): Promise<Poll> {
