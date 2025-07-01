@@ -17,6 +17,11 @@
           "id": 1,
           "text": "Mario",
           "votes": 0
+        },
+        {
+          "id": 2,
+          "text": "Dario",
+          "votes": 0
         }
       ]
     }

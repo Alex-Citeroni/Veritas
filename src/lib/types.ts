@@ -16,4 +16,5 @@ export interface Poll {
   questions: Question[];
   owner: string;
   isActive: boolean;
+  updatedAt?: string;
 }

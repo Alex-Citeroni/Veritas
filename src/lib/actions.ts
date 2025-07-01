@@ -92,7 +92,7 @@ async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Prom
     
     const timestampForFilename = now.toISOString().replace(/:/g, '-').slice(0, 19);
     
-    const safeTitle = poll.title
+    const safeTitle = (poll.title || 'sondaggio-senza-titolo')
       .normalize('NFD') // Decompose accented characters
       .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
       .replace(/[^\w\s-]/g, '') // Remove non-word chars, spaces, hyphens
@@ -244,6 +244,7 @@ export async function savePoll(
     try {
         const { title, questions } = data;
         let poll: Poll;
+        const updatedAt = new Date().toISOString();
 
         if (pollIdToUpdate) {
             // Update existing poll
@@ -263,6 +264,7 @@ export async function savePoll(
                         votes: 0, // Reset votes on update
                     })),
                 })),
+                updatedAt,
             };
         } else {
             // Create new poll
@@ -273,7 +275,7 @@ export async function savePoll(
                 id: randomUUID(),
                 title,
                 owner: username,
-                isActive: isFirstPoll, // New polls are active by default, if it's the first one.
+                isActive: isFirstPoll,
                 questions: questions.map((q, qIndex) => ({
                     id: qIndex,
                     text: q.text,
@@ -283,6 +285,7 @@ export async function savePoll(
                         votes: 0,
                     })),
                 })),
+                updatedAt,
             };
         }
 

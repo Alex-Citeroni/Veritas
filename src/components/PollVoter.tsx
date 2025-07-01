@@ -127,9 +127,21 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
   useEffect(() => {
     if (poll?.id) {
         try {
-            const storedVotesRaw = localStorage.getItem(`voted_${poll.id}`);
+            const storageKey = `voted_${poll.id}`;
+            const storedVotesRaw = localStorage.getItem(storageKey);
+            
             if (storedVotesRaw) {
-                const storedVotes = JSON.parse(storedVotesRaw);
+                const storedData = JSON.parse(storedVotesRaw);
+                
+                // If poll was updated since last vote, clear local storage
+                if (poll.updatedAt && storedData.updatedAt !== poll.updatedAt) {
+                    localStorage.removeItem(storageKey);
+                    setVotedAnswers({});
+                    return; 
+                }
+
+                // Otherwise, validate and set the votes from storage
+                const storedVotes = storedData.votes || {};
                 const validatedVotes: Record<number, number> = {};
                 if (poll.questions) {
                   for (const question of poll.questions) {
@@ -147,6 +159,8 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
             }
         } catch (error) {
             console.error("Failed to read or parse from localStorage", error);
+            // In case of parsing error, clear the corrupt data
+            localStorage.removeItem(`voted_${poll.id}`);
             setVotedAnswers({});
         }
     } else {
@@ -161,7 +175,11 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
       await submitVote(questionId, answerId, username);
       const newVotedAnswers = { ...votedAnswers, [questionId]: answerId };
       try {
-        localStorage.setItem(`voted_${poll.id}`, JSON.stringify(newVotedAnswers));
+        const dataToStore = {
+            votes: newVotedAnswers,
+            updatedAt: poll.updatedAt,
+        };
+        localStorage.setItem(`voted_${poll.id}`, JSON.stringify(dataToStore));
       } catch (error) {
         console.error("Failed to write to localStorage", error);
       }
