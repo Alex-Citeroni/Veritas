@@ -251,11 +251,14 @@ export async function savePoll(
             };
         } else {
             // Create new poll
+            const allPolls = await listPolls(username);
+            const isFirstPoll = allPolls.length === 0;
+
             poll = {
                 id: randomUUID(),
                 title,
                 owner: username,
-                isActive: false, // New polls are not active by default
+                isActive: isFirstPoll, // New polls are not active by default, unless it's the first one.
                 questions: questions.map((q, qIndex) => ({
                     id: qIndex,
                     text: q.text,
@@ -292,6 +295,10 @@ export async function deletePoll(pollId: string, username: string): Promise<{ su
 
         const filePath = getPollFilePath(username, pollId);
         await fs.unlink(filePath);
+
+        // After deleting, check if any polls are left. If not, we don't need to do anything.
+        // If there are polls but none are active, we could activate one, but the current spec
+        // is just to delete. Activating another poll could be an unexpected side effect.
 
         return { success: true };
     } catch (e) {
