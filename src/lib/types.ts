@@ -11,7 +11,7 @@ export interface Question {
 }
 
 export interface Poll {
-  id?: string;
+  id: string | null;
   title: string | null;
   questions: Question[];
   owner: string | null;

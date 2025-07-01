@@ -5,40 +5,138 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { login } from '@/lib/actions';
-import { Loader2, KeyRound } from 'lucide-react';
+import { checkUsername, loginAction, registerAction } from '@/lib/actions';
+import { Loader2, KeyRound, User, UserPlus } from 'lucide-react';
+
+type LoginStep = 'enter-username' | 'login-password' | 'register-password';
 
 export function Login() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [step, setStep] = useState<LoginStep>('enter-username');
+  const [username, setUsername] = useState('');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleUsernameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     const formData = new FormData(event.currentTarget);
+    const submittedUsername = formData.get('username') as string;
+
     startTransition(async () => {
-      const result = await login(formData);
+      const result = await checkUsername(submittedUsername);
       if (result?.error) {
         setError(result.error);
-        const usernameInput = event.currentTarget.elements.namedItem('username') as HTMLInputElement;
-        if (usernameInput) {
-            usernameInput.value = '';
+      } else {
+        setUsername(result.username);
+        if (result.exists) {
+          setStep('login-password');
+        } else {
+          setStep('register-password');
         }
       }
     });
   };
 
+  const handleAuthSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    const formData = new FormData(event.currentTarget);
+    formData.set('username', username);
+
+    if (step === 'register-password') {
+        const password = formData.get('password') as string;
+        const confirmPassword = formData.get('confirmPassword') as string;
+        if (password !== confirmPassword) {
+            setError('Le password non coincidono.');
+            return;
+        }
+    }
+
+    startTransition(async () => {
+      const action = step === 'login-password' ? loginAction : registerAction;
+      const result = await action(formData);
+      if (result?.error) {
+        setError(result.error);
+      }
+    });
+  };
+
+  const resetFlow = () => {
+    setError(null);
+    setUsername('');
+    setStep('enter-username');
+  };
+
+  if (step === 'login-password' || step === 'register-password') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Card className="w-full max-w-sm">
+          <form onSubmit={handleAuthSubmit}>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl flex items-center justify-center gap-2">
+                 {step === 'login-password' ? <KeyRound className="h-6 w-6" /> : <UserPlus className="h-6 w-6" />}
+                 {step === 'login-password' ? `Benvenuto, ${username}!` : `Crea Account per ${username}`}
+              </CardTitle>
+              <CardDescription>
+                {step === 'login-password' ? 'Inserisci la tua password per accedere.' : 'Crea una password sicura per il tuo nuovo account.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  disabled={isPending}
+                  autoComplete={step === 'login-password' ? "current-password" : "new-password"}
+                  autoFocus
+                />
+              </div>
+              {step === 'register-password' && (
+                <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Conferma Password</Label>
+                    <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    disabled={isPending}
+                    autoComplete="new-password"
+                    />
+                </div>
+              )}
+              {error && (
+                <p className="text-sm font-medium text-destructive">{error}</p>
+              )}
+            </CardContent>
+            <CardFooter className="flex-col gap-4">
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {step === 'login-password' ? 'Accedi' : 'Registrati e Accedi'}
+              </Button>
+               <Button variant="link" size="sm" onClick={resetFlow} type="button" disabled={isPending}>
+                Usa un altro username
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="w-full max-w-sm">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleUsernameSubmit}>
           <CardHeader className="text-center">
             <CardTitle className="text-2xl flex items-center justify-center gap-2">
-              <KeyRound className="h-6 w-6" />
+              <User className="h-6 w-6" />
               Accesso Utente
             </CardTitle>
             <CardDescription>
-              Inserisci il tuo username per creare e gestire i tuoi sondaggi.
+              Inserisci il tuo username per accedere o per creare un nuovo account.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -51,6 +149,7 @@ export function Login() {
                 required
                 disabled={isPending}
                 autoComplete="username"
+                autoFocus
               />
             </div>
             {error && (
@@ -60,7 +159,7 @@ export function Login() {
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Accedi o Registrati
+              Continua
             </Button>
           </CardFooter>
         </form>
