@@ -21,6 +21,7 @@ export default async function AdminPage() {
 
   const poll = await getPoll();
   const resultsFiles = await getResultsFiles();
+  const hasActivePoll = !!poll?.title;
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
@@ -40,7 +41,7 @@ export default async function AdminPage() {
       <main className="w-full max-w-3xl flex flex-col gap-8">
         <PollForm currentPoll={poll} />
         <Separator />
-        <ResultsManager files={resultsFiles} />
+        <ResultsManager files={resultsFiles} hasActivePoll={hasActivePoll} />
       </main>
     </div>
   );
