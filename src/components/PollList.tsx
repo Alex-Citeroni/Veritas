@@ -193,7 +193,7 @@ function PollAccordionItem({ poll }: { poll: PollWithResults }) {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-            <h4 className="font-semibold">Risultati Archiviati</h4>
+            <h4 className="font-semibold">Risultati Salvati</h4>
             <ResultFileList files={poll.results} />
         </AccordionContent>
       </div>
@@ -245,7 +245,7 @@ export function PollList({ polls, activePollId }: PollListProps) {
                         <ShareLinkButton username={activePoll.owner} />
                         <Button onClick={handleArchive} variant="outline" size="sm" disabled={isArchiving}>
                             {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Archivia Risultati
+                            Salva Risultati
                         </Button>
                     </div>
                 </div>

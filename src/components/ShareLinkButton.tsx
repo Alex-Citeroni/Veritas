@@ -28,7 +28,7 @@ export function ShareLinkButton({ username, disabled }: { username: string, disa
   return (
     <Button onClick={handleCopyLink} variant="outline" disabled={disabled}>
       <Share2 className="mr-2 h-4 w-4" />
-      Condividi Sondaggio
+      Condividi
     </Button>
   );
 }

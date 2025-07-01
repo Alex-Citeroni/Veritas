@@ -88,13 +88,21 @@ async function writePollFile(filePath: string, poll: Poll) {
 async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Promise<string> {
     const userResultsDir = getResultsDir(poll.owner);
     await ensureDir(userResultsDir);
-    const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+    const now = new Date();
     
-    // Use poll ID for a unique, safe filename with .md extension
-    const resultFileName = `${poll.id}-${reason}-${timestamp}.md`;
+    const timestampForFilename = now.toISOString().replace(/:/g, '-').slice(0, 19);
+    
+    const safeTitle = poll.title
+      .normalize('NFD') // Decompose accented characters
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^\w\s-]/g, '') // Remove non-word chars, spaces, hyphens
+      .trim()
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .slice(0, 50); // Truncate
+
+    const resultFileName = `${safeTitle}-${timestampForFilename}.md`;
     const resultFilePath = path.join(userResultsDir, resultFileName);
 
-    const now = new Date();
     let fileContent = `# Risultati Sondaggio: ${poll.title}\n\n`;
     fileContent += `- **Proprietario**: ${poll.owner}\n`;
     fileContent += `- **Stato**: ${reason === 'ended' ? 'Terminato' : 'Archiviato'}\n`;
