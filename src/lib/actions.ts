@@ -3,7 +3,6 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { Poll, Question } from '@/lib/types';
-import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { randomUUID, scrypt, timingSafeEqual } from 'crypto';
@@ -149,6 +148,7 @@ export async function authenticateAction(prevState: any, formData: FormData) {
   const mode = formData.get('mode') as 'login' | 'register';
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
+  let successful = false;
 
   if (!username || !password) {
     return { error: 'Username e password sono obbligatori.' };
@@ -179,6 +179,7 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     }
 
     await loginUser(username);
+    successful = true;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT' && mode === 'login') {
       return { error: 'Utente non trovato.' };
@@ -186,7 +187,13 @@ export async function authenticateAction(prevState: any, formData: FormData) {
     console.error(`Authentication failed for user ${username}:`, error);
     return { error: 'Si è verificato un errore del server. Riprova.' };
   }
-  redirect('/admin');
+  
+  if(successful) {
+    redirect('/admin');
+  }
+  
+  // This part is unreachable if successful, but keeps TS happy.
+  return { error: 'Si è verificato un errore inaspettato.' };
 }
 
 export async function logout() {
@@ -268,9 +275,6 @@ export async function savePoll(
 
         const filePath = getPollFilePath(username, poll.id);
         await writePollFile(filePath, poll);
-
-        revalidatePath('/admin');
-        revalidatePath(`/${username}`);
         
         return { success: true };
     } catch (e) {
@@ -294,8 +298,6 @@ export async function deletePoll(pollId: string, username: string): Promise<{ su
         const filePath = getPollFilePath(username, pollId);
         await fs.unlink(filePath);
 
-        revalidatePath(`/${username}`);
-        revalidatePath('/admin');
         return { success: true };
     } catch (e) {
         const error = e as Error;
@@ -326,8 +328,6 @@ export async function activatePoll(pollId: string, username: string): Promise<{ 
             return { success: false, error: 'Sondaggio non trovato.' };
         }
 
-        revalidatePath(`/${username}`);
-        revalidatePath('/admin');
         return { success: true };
     } catch (e) {
         const error = e as Error;
@@ -348,8 +348,6 @@ export async function deactivatePoll(pollId: string, username: string): Promise<
             await writePollFile(getPollFilePath(username, poll.id), poll);
         }
         
-        revalidatePath(`/${username}`);
-        revalidatePath('/admin');
         return { success: true };
     } catch (e) {
         const error = e as Error;
@@ -384,7 +382,6 @@ export async function submitVote(questionId: number, answerId: number, username:
         console.error("Failed to write poll data on vote:", error);
         return { error: "Impossibile salvare il voto. Si è verificato un errore del server." };
     }
-    revalidatePath(`/${username}`);
     return { success: 'Voto inviato!' };
   }
   return { error: 'Risposta non valida.' };
