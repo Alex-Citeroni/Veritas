@@ -249,8 +249,6 @@ export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
       title: currentPoll?.title || '',
       questions: currentPoll?.questions?.length ? currentPoll.questions.map(q => ({ text: q.text, answers: q.answers.map(a => ({ text: a.text })) })) : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
     },
-    // Reset form when currentPoll changes
-    key: pollId || 'new-poll',
   });
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion, move: moveQuestion } = useFieldArray({

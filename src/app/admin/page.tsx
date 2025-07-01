@@ -32,6 +32,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
       </header>
       <main className="w-full max-w-5xl flex flex-col gap-8">
         <PollForm
+          key={pollIdToEdit || 'new-poll'}
           username={username}
           currentPoll={pollToEdit}
           pollId={pollIdToEdit}
