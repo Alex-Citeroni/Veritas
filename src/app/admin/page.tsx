@@ -18,8 +18,8 @@ export default async function AdminPage() {
   const poll = await getPoll();
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4">
-      <header className="absolute top-4 right-4 flex items-center gap-4">
+    <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
+      <header className="w-full max-w-3xl flex justify-end items-center gap-4 mb-8">
         <Button asChild variant="outline">
           <Link href="/">
             <Eye className="mr-2 h-4 w-4" />
