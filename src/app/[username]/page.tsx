@@ -27,7 +27,7 @@ export default async function UserPollPage({ params }: { params: { username: str
                 </div>
             </div>
         </header>
-      <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 flex justify-center">
+      <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 pb-16 flex justify-center">
         <PollVoter initialPoll={poll} username={username} />
       </main>
     </div>
