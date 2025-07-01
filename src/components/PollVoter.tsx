@@ -63,6 +63,16 @@ function PollQuestion({
                             </div>
                             <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                         </div>
+                        <div
+                            className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                            style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                        >
+                            <div className="flex items-center gap-2">
+                                {isUserChoice && <CheckCircle className="h-5 w-5 text-primary-foreground" />}
+                                <span>{answer.text}</span>
+                            </div>
+                            <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                        </div>
                     </div>
                     );
                 })}
