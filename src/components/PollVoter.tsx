@@ -64,11 +64,12 @@ function PollQuestion({
                             <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                         </div>
                         <div
-                            className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                            className={`absolute inset-0 flex items-center justify-between px-4 font-medium ${isUserChoice ? 'text-primary-foreground' : 'text-foreground' }`}
                             style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
                         >
                             <div className="flex items-center gap-2">
                                 {isUserChoice && <CheckCircle className="h-5 w-5 text-primary-foreground" />}
+                                {!isUserChoice && <CheckCircle className="h-5 w-5 text-transparent" />}
                                 <span>{answer.text}</span>
                             </div>
                             <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
@@ -125,7 +126,17 @@ export function PollVoter() {
         try {
             const storedVotesRaw = localStorage.getItem(`voted_${poll.id}`);
             if (storedVotesRaw) {
-                setVotedAnswers(JSON.parse(storedVotesRaw));
+                const storedVotes = JSON.parse(storedVotesRaw);
+                const validatedVotes: Record<number, number> = {};
+                for (const question of poll.questions) {
+                    if (storedVotes[question.id] !== undefined) {
+                        const answerExists = question.answers.some(a => a.id === storedVotes[question.id]);
+                        if (answerExists) {
+                            validatedVotes[question.id] = storedVotes[question.id];
+                        }
+                    }
+                }
+                setVotedAnswers(validatedVotes);
             } else {
                 setVotedAnswers({});
             }

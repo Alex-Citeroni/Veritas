@@ -1,5 +1,5 @@
 {
-  "id": "52e17f7f-5ce6-40ea-a8ef-bedbed098ca4",
+  "id": "c7abccfb-5c9f-41b4-bb39-641ce192dc2d",
   "title": "Prova",
   "questions": [
     {
@@ -8,13 +8,18 @@
       "answers": [
         {
           "id": 0,
-          "text": "Si",
+          "text": "No",
           "votes": 1
         },
         {
           "id": 1,
-          "text": "No",
+          "text": "Forse",
           "votes": 1
+        },
+        {
+          "id": 2,
+          "text": "Si",
+          "votes": 0
         }
       ]
     }
