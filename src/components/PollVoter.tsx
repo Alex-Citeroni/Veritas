@@ -64,7 +64,7 @@ function PollQuestion({
                             <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                         </div>
                         <div
-                            className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                            className={`absolute inset-0 flex items-center justify-between px-4 font-medium ${isUserChoice ? 'text-primary-foreground' : 'text-primary'}`}
                             style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
                         >
                             <div className="flex items-center gap-2">
