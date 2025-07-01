@@ -230,6 +230,12 @@ export function PollList({ polls, activePollId }: PollListProps) {
                             </Link>
                         </Button>
                         <ShareLinkButton username={activePoll.owner} />
+                        <Button asChild variant="outline" size="sm">
+                            <a href="/api/results/current" download>
+                                <Download className="mr-2 h-4 w-4" />
+                                Risultati Live
+                            </a>
+                        </Button>
                     </div>
                 </div>
              </div>
