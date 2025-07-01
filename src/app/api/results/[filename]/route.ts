@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { cookies } from 'next/headers';
-import { revalidatePath } from 'next/cache';
 
 const resultsBaseDir = path.join(process.cwd(), 'results');
 
@@ -67,8 +66,6 @@ export async function DELETE(
 
   try {
     await fs.unlink(filePath);
-    revalidatePath('/admin');
-    revalidatePath(`/${username}`);
     return NextResponse.json({ message: 'File deleted successfully' }, { status: 200 });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers';
-import { listPolls, getPollById } from '@/lib/actions';
+import { listPolls, getPollById, getResultsFiles } from '@/lib/actions';
 import { Login } from '@/components/Login';
 import { LogoutButton } from '@/components/LogoutButton';
 import { PollForm } from '@/components/PollForm';
 import { PollList } from '@/components/PollList';
 import { Separator } from '@/components/ui/separator';
+import { ResultsManager } from '@/components/ResultsManager';
 
 export default async function AdminPage({ searchParams }: { searchParams: { edit?: string } }) {
   const cookieStore = cookies();
@@ -15,6 +16,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
   }
 
   const polls = await listPolls(username);
+  const resultFiles = await getResultsFiles(username);
   const pollIdToEdit = searchParams.edit;
   
   let pollToEdit = null;
@@ -45,6 +47,8 @@ export default async function AdminPage({ searchParams }: { searchParams: { edit
         />
         <Separator />
         <PollList polls={polls} activePollId={activePoll?.id} />
+        <Separator />
+        <ResultsManager files={resultFiles} hasActivePoll={!!activePoll} />
       </main>
     </div>
   );
