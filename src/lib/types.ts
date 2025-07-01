@@ -11,6 +11,7 @@ export interface Question {
 }
 
 export interface Poll {
+  id?: string;
   title: string | null;
   questions: Question[];
 }

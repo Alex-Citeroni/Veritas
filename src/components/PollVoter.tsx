@@ -56,7 +56,7 @@ function PollQuestion({
                         className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
                         style={{ width: `${percentage}%` }}
                         />
-                        <div className="absolute inset-0 flex items-center justify-between px-4 font-medium text-secondary-foreground">
+                        <div className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary">
                             <div className="flex items-center gap-2">
                                 {isUserChoice && <CheckCircle className="h-5 w-5 text-primary" />}
                                 <span>{answer.text}</span>
@@ -64,7 +64,7 @@ function PollQuestion({
                             <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                         </div>
                         <div
-                            className={`absolute inset-0 flex items-center justify-between px-4 font-medium ${isUserChoice ? 'text-primary-foreground' : 'text-primary'}`}
+                            className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
                             style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
                         >
                             <div className="flex items-center gap-2">
@@ -121,26 +121,11 @@ export function PollVoter() {
   }, []);
   
   useEffect(() => {
-    if (poll?.title) {
+    if (poll?.id) {
         try {
-            const storedVotesRaw = localStorage.getItem(`voted_${poll.title}`);
+            const storedVotesRaw = localStorage.getItem(`voted_${poll.id}`);
             if (storedVotesRaw) {
-                const votes = JSON.parse(storedVotesRaw);
-                
-                const questionIdsInStorage = Object.keys(votes).map(Number);
-                const allQuestionsValid = questionIdsInStorage.every(qId => {
-                    const question = poll.questions.find(q => q.id === qId);
-                    if (!question) return false;
-                    const answerId = votes[qId];
-                    return question.answers.some(a => a.id === answerId);
-                });
-
-                if (allQuestionsValid) {
-                    setVotedAnswers(votes);
-                } else {
-                    setVotedAnswers({});
-                    localStorage.removeItem(`voted_${poll.title}`);
-                }
+                setVotedAnswers(JSON.parse(storedVotesRaw));
             } else {
                 setVotedAnswers({});
             }
@@ -154,13 +139,13 @@ export function PollVoter() {
   }, [poll]);
 
   const handleVote = (questionId: number, answerId: number) => {
-    if (!poll?.title) return;
+    if (!poll?.id) return;
 
     startVoting(async () => {
       await submitVote(questionId, answerId);
       const newVotedAnswers = { ...votedAnswers, [questionId]: answerId };
       try {
-        localStorage.setItem(`voted_${poll.title!}`, JSON.stringify(newVotedAnswers));
+        localStorage.setItem(`voted_${poll.id}`, JSON.stringify(newVotedAnswers));
       } catch (error) {
         console.error("Failed to write to localStorage", error);
       }

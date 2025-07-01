@@ -116,8 +116,6 @@ export function PollForm({ currentPoll }: PollFormProps) {
       const result = await createPoll(data, hasActivePoll);
       if (result?.error) {
         toast({ variant: 'destructive', title: 'Errore', description: result.error });
-      } else if (result?.success) {
-        toast({ title: 'Successo', description: result.success });
       }
     });
   };

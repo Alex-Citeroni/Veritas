@@ -6,6 +6,7 @@ import { type Poll } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { randomUUID } from 'crypto';
 
 const dataDir = path.join(process.cwd(), 'data');
 const pollFilePath = path.join(dataDir, 'poll.json');
@@ -131,6 +132,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
   }
 
   const newPoll: Poll = {
+    id: randomUUID(),
     title,
     questions: questions.map((question, qIndex) => ({
       id: qIndex,
@@ -153,11 +155,7 @@ export async function createPoll(data: { title: string; questions: { text: strin
   revalidatePath('/');
   revalidatePath('/admin');
   
-  if (!isUpdate) {
-    redirect('/');
-  }
-
-  return { success: isUpdate ? 'Sondaggio aggiornato con successo! I risultati precedenti sono stati archiviati.' : 'Sondaggio creato con successo!' };
+  redirect('/');
 }
 
 export async function getPoll(): Promise<Poll> {
