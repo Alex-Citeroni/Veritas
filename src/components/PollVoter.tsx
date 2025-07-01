@@ -207,11 +207,6 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-        <header className="absolute top-4 left-4 flex items-center gap-2 text-lg font-semibold">
-          <ShieldCheck className="h-6 w-6 text-primary" />
-          <span>Veritas</span>
-        </header>
-        
         <div className="text-center">
             <Sparkles className="w-16 h-16 text-primary mx-auto" />
             <h1 className="text-4xl font-bold mt-2 mb-2 text-primary">{poll.title}</h1>
