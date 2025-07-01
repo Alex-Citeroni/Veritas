@@ -71,25 +71,11 @@ export function ResultsManager({ files, hasActivePoll }: ResultsManagerProps) {
       <CardHeader>
         <CardTitle>Download Risultati</CardTitle>
         <CardDescription>
-          Scarica o elimina i risultati dei sondaggi precedenti e di quello attualmente in corso.
+          Scarica o elimina i risultati dei sondaggi precedenti.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="space-y-3">
-          {hasActivePoll && (
-            <li key="current" className="flex items-center justify-between p-3 rounded-lg border border-primary bg-primary/10">
-              <div className="flex items-center gap-3 font-semibold text-primary">
-                <Activity className="h-5 w-5" />
-                <span>Sondaggio Attuale (Live)</span>
-              </div>
-              <Button asChild size="sm">
-                <a href={`/api/results/current`} download>
-                  <Download className="mr-2 h-4 w-4" />
-                  Scarica
-                </a>
-              </Button>
-            </li>
-          )}
           {files.map((file) => (
             <li key={file} className="flex items-center justify-between p-3 rounded-lg border bg-secondary/30">
               <div className="flex items-center gap-3 font-mono text-sm text-muted-foreground overflow-hidden">

@@ -4,26 +4,15 @@ import { useTransition } from 'react';
 import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Trash2, Loader2, Send, FilePlus2, GripVertical } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Save, FilePlus2, GripVertical } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { createPoll, endPoll } from '@/lib/actions';
+import { savePoll } from '@/lib/actions';
 import type { Poll } from '@/lib/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import {
   DndContext,
   closestCenter,
@@ -41,6 +30,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useRouter } from 'next/navigation';
 
 const pollFormSchema = z.object({
   title: z.string().min(3, 'Il titolo deve contenere almeno 3 caratteri.'),
@@ -55,8 +45,9 @@ const pollFormSchema = z.object({
 type PollFormValues = z.infer<typeof pollFormSchema>;
 
 interface PollFormProps {
-  currentPoll: Poll;
   username: string;
+  currentPoll?: Poll | null;
+  pollId?: string;
 }
 
 interface SortableAnswerProps {
@@ -245,10 +236,12 @@ function SortableQuestionItem({ id, control, questionIndex, removeQuestion, isSu
 }
 
 
-export function PollForm({ currentPoll, username }: PollFormProps) {
+export function PollForm({ username, currentPoll, pollId }: PollFormProps) {
   const [isSubmitting, startSubmitting] = useTransition();
-  const [isEnding, startEnding] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const isEditMode = !!currentPoll;
 
   const form = useForm<PollFormValues>({
     resolver: zodResolver(pollFormSchema),
@@ -256,6 +249,8 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
       title: currentPoll?.title || '',
       questions: currentPoll?.questions?.length ? currentPoll.questions.map(q => ({ text: q.text, answers: q.answers.map(a => ({ text: a.text })) })) : [{ text: '', answers: [{ text: '' }, { text: '' }] }],
     },
+    // Reset form when currentPoll changes
+    key: pollId || 'new-poll',
   });
 
   const { fields: questionFields, append: appendQuestion, remove: removeQuestion, move: moveQuestion } = useFieldArray({
@@ -263,25 +258,21 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
     name: 'questions',
   });
   
-  const hasActivePoll = !!currentPoll?.title;
-
   const onSubmit = (data: PollFormValues) => {
     startSubmitting(async () => {
-      const result = await createPoll(data, hasActivePoll, username);
-      if (result?.error) {
-        toast({ variant: 'destructive', title: 'Errore', description: result.error });
-      }
-    });
-  };
-  
-  const handleEndPoll = () => {
-    startEnding(async () => {
-      const result = await endPoll(username);
-       if (result.error) {
-        toast({ variant: 'destructive', title: 'Errore', description: result.error });
-      } else {
-        toast({ title: 'Successo', description: result.success });
-        form.reset({ title: '', questions: [{ text: '', answers: [{ text: '' }, { text: '' }] }] });
+      try {
+        await savePoll(data, username, pollId);
+        toast({
+            title: 'Successo!',
+            description: `Sondaggio ${isEditMode ? 'aggiornato' : 'creato'} con successo.`,
+        });
+        // Redirect is handled by the server action
+      } catch (error) {
+        toast({ 
+            variant: 'destructive', 
+            title: 'Errore', 
+            description: error instanceof Error ? error.message : "Si è verificato un errore sconosciuto." 
+        });
       }
     });
   };
@@ -309,9 +300,9 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
       <CardHeader>
-        <CardTitle>Crea o Gestisci Sondaggio</CardTitle>
+        <CardTitle>{isEditMode ? 'Modifica Sondaggio' : 'Crea Nuovo Sondaggio'}</CardTitle>
         <CardDescription>
-          {hasActivePoll ? `Sondaggio attuale: "${currentPoll.title}"` : 'Crea un nuovo sondaggio per il tuo pubblico.'}
+          {isEditMode ? `Stai modificando il sondaggio: "${currentPoll.title}"` : 'Compila i campi per creare un nuovo sondaggio.'}
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -368,29 +359,15 @@ export function PollForm({ currentPoll, username }: PollFormProps) {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={!hasActivePoll || isSubmitting || isEnding}>Termina Sondaggio Attuale</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Sei assolutamente sicuro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Questo terminerà il sondaggio attuale, salverà i risultati e preparerà il campo per un nuovo sondaggio. Questa azione non può essere annullata.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annulla</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleEndPoll} disabled={isEnding}>
-                    {isEnding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Termina e Salva
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-              {hasActivePoll ? 'Aggiorna Sondaggio' : 'Crea Sondaggio'}
+            {isEditMode && (
+                <Button type="button" variant="outline" onClick={() => router.push('/admin')}>
+                    Annulla Modifica
+                </Button>
+            )}
+            <div className="flex-grow" />
+            <Button type="submit" disabled={isSubmitting} className="ml-auto">
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isEditMode ? 'Salva Modifiche' : 'Salva Sondaggio'}
             </Button>
           </CardFooter>
         </form>

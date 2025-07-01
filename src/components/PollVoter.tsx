@@ -56,16 +56,16 @@ function PollQuestion({
                                 className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
                                 style={{ width: `${percentage}%` }}
                             />
-                            <div 
+                             <div 
                                 className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary"
                             >
                                 <div className="flex items-center gap-2">
-                                     <CheckCircle className={`h-5 w-5 ${isUserChoice ? 'text-primary' : 'text-transparent'}`} />
+                                     <CheckCircle className={`h-5 w-5 ${isUserChoice ? 'text-transparent' : 'text-transparent'}`} />
                                     <span>{answer.text}</span>
                                 </div>
                                 <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
                             </div>
-                             {isUserChoice && (
+                            {isUserChoice && (
                                 <div
                                     className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
                                     style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
@@ -102,7 +102,7 @@ function PollQuestion({
 }
 
 
-export function PollVoter({ initialPoll, username }: { initialPoll: Poll, username: string }) {
+export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null, username: string }) {
   const [poll, setPoll] = useState<Poll | null>(initialPoll);
   const [votedAnswers, setVotedAnswers] = useState<Record<number, number>>({});
   const [isVoting, startVoting] = useTransition();

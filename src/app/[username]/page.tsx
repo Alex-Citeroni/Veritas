@@ -7,7 +7,7 @@ import type { Poll } from '@/lib/types';
 
 export default async function UserPollPage({ params }: { params: { username: string } }) {
   const { username } = params;
-  const poll: Poll = await getPoll(username);
+  const poll: Poll | null = await getPoll(username);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-24 relative">

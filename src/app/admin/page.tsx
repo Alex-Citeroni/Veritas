@@ -1,17 +1,12 @@
 import { cookies } from 'next/headers';
-import { PollForm } from '@/components/PollForm';
-import { getPoll, getResultsFiles } from '@/lib/actions';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { listPolls, getPollById } from '@/lib/actions';
 import { Login } from '@/components/Login';
 import { LogoutButton } from '@/components/LogoutButton';
-import { ShareLinkButton } from '@/components/ShareLinkButton';
-import { ResultsManager } from '@/components/ResultsManager';
+import { PollForm } from '@/components/PollForm';
+import { PollList } from '@/components/PollList';
 import { Separator } from '@/components/ui/separator';
 
-
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: { edit?: string } }) {
   const cookieStore = cookies();
   const username = cookieStore.get('username')?.value;
 
@@ -19,31 +14,30 @@ export default async function AdminPage() {
     return <Login />;
   }
 
-  const poll = await getPoll(username);
-  const resultsFiles = await getResultsFiles(username);
-  const hasActivePoll = !!poll?.title;
+  const polls = await listPolls(username);
+  const pollIdToEdit = searchParams.edit;
+  
+  let pollToEdit = null;
+  if (pollIdToEdit) {
+    pollToEdit = await getPollById(pollIdToEdit, username);
+  }
+
+  const activePoll = polls.find(p => p.isActive) || null;
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
-      <header className="w-full max-w-3xl flex justify-between items-center mb-8">
-         <h1 className="text-2xl font-bold">Pannello Admin ({username})</h1>
-        <div className="flex items-center gap-2">
-            {hasActivePoll && (
-              <Button asChild variant="outline">
-                <Link href={`/${username}`}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Vedi Sondaggio
-                </Link>
-              </Button>
-            )}
-            <ShareLinkButton username={username} disabled={!hasActivePoll} />
-            <LogoutButton />
-        </div>
+      <header className="w-full max-w-5xl flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Dashboard Sondaggi ({username})</h1>
+        <LogoutButton />
       </header>
-      <main className="w-full max-w-3xl flex flex-col gap-8">
-        <PollForm currentPoll={poll} username={username} />
+      <main className="w-full max-w-5xl flex flex-col gap-8">
+        <PollForm
+          username={username}
+          currentPoll={pollToEdit}
+          pollId={pollIdToEdit}
+        />
         <Separator />
-        <ResultsManager files={resultsFiles} hasActivePoll={hasActivePoll} />
+        <PollList polls={polls} activePollId={activePoll?.id} />
       </main>
     </div>
   );

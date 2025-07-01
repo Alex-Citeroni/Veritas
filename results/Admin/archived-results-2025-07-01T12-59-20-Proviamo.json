@@ -1,0 +1,36 @@
+{
+  "title": "Proviamo",
+  "owner": "Admin",
+  "timestamp": "2025-07-01T12:59:20.272Z",
+  "status": "updated",
+  "questions": [
+    {
+      "question": "Ciao, come va?",
+      "results": [
+        {
+          "text": "Tutto bene",
+          "votes": 0
+        },
+        {
+          "text": "Male male",
+          "votes": 1
+        }
+      ],
+      "totalVotes": 1
+    },
+    {
+      "question": "Eccolo",
+      "results": [
+        {
+          "text": "sissignore",
+          "votes": 1
+        },
+        {
+          "text": "nosignore",
+          "votes": 0
+        }
+      ],
+      "totalVotes": 1
+    }
+  ]
+}

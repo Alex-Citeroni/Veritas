@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { type Poll } from '@/lib/types';
+import type { Poll, Question } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -24,9 +24,17 @@ function getUserFilePath(username: string): string {
     return path.join(getUserDir(username), 'user.json');
 }
 
+function getPollsDir(username: string): string {
+    return path.join(getUserDir(username), 'polls');
+}
 
-function getPollFilePath(username: string): string {
-    return path.join(getUserDir(username), 'poll.json');
+function getPollFilePath(username: string, pollId: string): string {
+    const pollsDir = getPollsDir(username);
+    // Basic validation to prevent path traversal
+    if (pollId.includes('..') || pollId.includes('/')) {
+        throw new Error('Invalid Poll ID');
+    }
+    return path.join(pollsDir, `${pollId}.json`);
 }
 
 function getResultsDir(username: string): string {
@@ -48,7 +56,6 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
     return timingSafeEqual(keyBuffer, derivedKey);
 }
 
-
 // --- File System Helpers ---
 
 async function ensureDir(dirPath: string) {
@@ -59,58 +66,37 @@ async function ensureDir(dirPath: string) {
   }
 }
 
-async function ensurePollFile(username: string) {
-  const userDir = path.join(dataDir, username);
-  await ensureDir(userDir);
-  const pollFilePath = getPollFilePath(username);
-  try {
-    await fs.access(pollFilePath);
-  } catch {
-    await fs.writeFile(pollFilePath, JSON.stringify({ id: null, title: null, questions: [], owner: username }), 'utf-8');
-  }
+async function readPollFile(filePath: string): Promise<Poll | null> {
+    try {
+        const pollData = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(pollData) as Poll;
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return null; // File not found is a valid case
+        }
+        console.error(`Error reading poll file ${filePath}:`, error);
+        throw new Error('Could not read poll file.');
+    }
 }
 
-async function getPollData(username: string): Promise<Poll> {
-  await ensurePollFile(username);
-  const pollFilePath = getPollFilePath(username);
-  try {
-    const pollData = await fs.readFile(pollFilePath, 'utf-8');
-     if (!pollData.trim()) {
-        return { id: null, title: null, questions: [], owner: username };
-    }
-    const parsedData = JSON.parse(pollData);
-    if (!parsedData.owner) {
-        return { ...parsedData, owner: username };
-    }
-    return parsedData;
-  } catch (error) {
-    console.error(`Error reading or parsing poll data for user ${username}:`, error);
-    return { id: null, title: null, questions: [], owner: username };
-  }
+async function writePollFile(filePath: string, poll: Poll) {
+    await ensureDir(path.dirname(filePath));
+    await fs.writeFile(filePath, JSON.stringify(poll, null, 2), 'utf-8');
 }
 
-async function writePollData(poll: Poll, username: string) {
-  await ensurePollFile(username);
-  const pollFilePath = getPollFilePath(username);
-  await fs.writeFile(pollFilePath, JSON.stringify(poll, null, 2), 'utf-8');
-}
-
-async function archivePollResults(poll: Poll, username: string, reason: 'updated' | 'ended'): Promise<string> {
-    if (!poll.title) {
-        throw new Error('Nessun sondaggio attivo da archiviare.');
-    }
-
-    const userResultsDir = getResultsDir(username);
+async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Promise<string> {
+    const userResultsDir = getResultsDir(poll.owner);
     await ensureDir(userResultsDir);
     const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-    const safeTitle = poll.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s/g, '_').substring(0, 50);
-    const prefix = reason === 'ended' ? 'results' : 'archived-results';
-    const resultFileName = `${prefix}-${timestamp}-${safeTitle}.json`;
+    
+    // Use poll ID for a unique, safe filename
+    const resultFileName = `${poll.id}-${reason}-${timestamp}.json`;
     const resultFilePath = path.join(userResultsDir, resultFileName);
 
     const results = {
+        pollId: poll.id,
         title: poll.title,
-        owner: username,
+        owner: poll.owner,
         timestamp: new Date().toISOString(),
         status: reason,
         questions: poll.questions.map(q => ({
@@ -210,72 +196,150 @@ export async function logout() {
 
 // --- Poll Actions ---
 
-export async function createPoll(data: { title: string; questions: { text: string; answers: { text: string }[] }[] }, isUpdate: boolean, username: string): Promise<{ error: string } | void> {
-  if (!username) {
-    throw new Error("Utente non autenticato.");
-  }
-
-  const { title, questions } = data;
-
-  if (!title || questions.length < 1) {
-    return { error: 'Sono richiesti un titolo e almeno una domanda.' };
-  }
-  for (const q of questions) {
-    if (!q.text || q.answers.length < 2 || q.answers.some(a => !a.text.trim())) {
-        return { error: 'Ogni domanda deve avere un testo e almeno due risposte non vuote.' };
-    }
-  }
-
-  if (isUpdate) {
+export async function listPolls(username: string): Promise<Poll[]> {
+    const pollsDir = getPollsDir(username);
+    await ensureDir(pollsDir);
     try {
-      const currentPoll = await getPollData(username);
-      if (currentPoll.title) {
-        await archivePollResults(currentPoll, username, 'updated');
-      }
+        const files = await fs.readdir(pollsDir);
+        const pollPromises = files
+            .filter(file => file.endsWith('.json'))
+            .map(file => readPollFile(path.join(pollsDir, file)));
+        
+        const polls = (await Promise.all(pollPromises)).filter(p => p !== null) as Poll[];
+        return polls.sort((a, b) => a.title.localeCompare(b.title));
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Impossibile archiviare i risultati del sondaggio precedente.";
-        return { error: errorMessage };
+        console.error(`Failed to list polls for user ${username}:`, error);
+        return [];
     }
-  }
-
-  const newPoll: Poll = {
-    id: randomUUID(),
-    title,
-    owner: username,
-    questions: questions.map((question, qIndex) => ({
-      id: qIndex,
-      text: question.text,
-      answers: question.answers.map((answer, aIndex) => ({
-        id: aIndex,
-        text: answer.text,
-        votes: 0,
-      })),
-    })),
-  };
-
-  try {
-    await writePollData(newPoll, username);
-  } catch (error) {
-    console.error("Failed to write poll data:", error);
-    return { error: "Impossibile salvare il sondaggio. Si è verificato un errore del server." };
-  }
-
-  revalidatePath(`/${username}`);
-  revalidatePath('/admin');
-  
-  redirect(`/${username}`);
 }
 
-export async function getPoll(username: string): Promise<Poll> {
-  if (!username) {
-    return { id: null, title: null, questions: [], owner: null };
-  }
-  return await getPollData(username);
+export async function getPollById(pollId: string, username: string): Promise<Poll | null> {
+    const filePath = getPollFilePath(username, pollId);
+    return readPollFile(filePath);
 }
+
+
+export async function savePoll(
+    data: { title: string; questions: { text: string; answers: { text: string }[] }[] },
+    username: string,
+    pollIdToUpdate?: string
+) {
+    const { title, questions } = data;
+    let poll: Poll;
+
+    if (pollIdToUpdate) {
+        // Update existing poll
+        const existingPoll = await getPollById(pollIdToUpdate, username);
+        if (!existingPoll || existingPoll.owner !== username) {
+            return { error: 'Sondaggio non trovato o non autorizzato.' };
+        }
+        poll = {
+            ...existingPoll,
+            title,
+            questions: questions.map((q, qIndex) => ({
+                id: qIndex,
+                text: q.text,
+                answers: q.answers.map((a, aIndex) => ({
+                    id: aIndex,
+                    text: a.text,
+                    votes: 0, // Reset votes on update
+                })),
+            })),
+        };
+    } else {
+        // Create new poll
+        poll = {
+            id: randomUUID(),
+            title,
+            owner: username,
+            isActive: false, // New polls are not active by default
+            questions: questions.map((q, qIndex) => ({
+                id: qIndex,
+                text: q.text,
+                answers: q.answers.map((a, aIndex) => ({
+                    id: aIndex,
+                    text: a.text,
+                    votes: 0,
+                })),
+            })),
+        };
+    }
+
+    const filePath = getPollFilePath(username, poll.id);
+    await writePollFile(filePath, poll);
+
+    revalidatePath('/admin');
+    redirect('/admin');
+}
+
+export async function deletePoll(pollId: string, username: string) {
+    const poll = await getPollById(pollId, username);
+    if (!poll || poll.owner !== username) {
+        return { error: 'Sondaggio non trovato o non autorizzato.' };
+    }
+    
+    // If poll is active, archive its results
+    if (poll.isActive) {
+       await archivePollResults(poll, 'ended');
+    }
+
+    const filePath = getPollFilePath(username, pollId);
+    await fs.unlink(filePath);
+
+    revalidatePath(`/${username}`);
+    revalidatePath('/admin');
+}
+
+
+export async function activatePoll(pollId: string, username: string) {
+    const allPolls = await listPolls(username);
+    let targetPoll: Poll | null = null;
+    
+    for (const p of allPolls) {
+        if (p.id === pollId) {
+            targetPoll = p;
+        } else if (p.isActive) {
+            p.isActive = false;
+            await writePollFile(getPollFilePath(username, p.id), p);
+        }
+    }
+
+    if (targetPoll) {
+        targetPoll.isActive = true;
+        await writePollFile(getPollFilePath(username, targetPoll.id), targetPoll);
+    }
+
+    revalidatePath(`/${username}`);
+    revalidatePath('/admin');
+}
+
+export async function deactivatePoll(pollId: string, username: string) {
+    const poll = await getPollById(pollId, username);
+    if (!poll || poll.owner !== username) {
+        return { error: 'Sondaggio non trovato o non autorizzato.' };
+    }
+    if (poll.isActive) {
+        await archivePollResults(poll, 'ended');
+        poll.isActive = false;
+        await writePollFile(getPollFilePath(username, poll.id), poll);
+    }
+    
+    revalidatePath(`/${username}`);
+    revalidatePath('/admin');
+}
+
+// --- Voting Page Actions ---
+
+export async function getPoll(username: string): Promise<Poll | null> {
+    const allPolls = await listPolls(username);
+    const activePoll = allPolls.find(p => p.isActive) || null;
+    return activePoll;
+}
+
 
 export async function submitVote(questionId: number, answerId: number, username: string) {
-  const poll = await getPollData(username);
-  if (!poll.title) return { error: 'Nessun sondaggio attivo.' };
+  const poll = await getPoll(username);
+  if (!poll?.id) return { error: 'Nessun sondaggio attivo.' };
 
   const question = poll.questions.find(q => q.id === questionId);
   if (!question) return { error: 'Domanda non valida.' };
@@ -284,7 +348,8 @@ export async function submitVote(questionId: number, answerId: number, username:
   if (answer) {
     answer.votes += 1;
     try {
-        await writePollData(poll, username);
+        const filePath = getPollFilePath(username, poll.id);
+        await writePollFile(filePath, poll);
     } catch (error) {
         console.error("Failed to write poll data on vote:", error);
         return { error: "Impossibile salvare il voto. Si è verificato un errore del server." };
@@ -295,29 +360,8 @@ export async function submitVote(questionId: number, answerId: number, username:
   return { error: 'Risposta non valida.' };
 }
 
-export async function endPoll(username: string) {
-    if (!username) {
-      return { error: "Utente non autenticato." };
-    }
 
-    try {
-        const poll = await getPollData(username);
-        if (!poll.title) {
-            return { error: 'Nessun sondaggio attivo da terminare.' };
-        }
-        const resultFileName = await archivePollResults(poll, username, 'ended');
-        await writePollData({ id: null, title: null, questions: [], owner: username }, username);
-        
-        revalidatePath(`/${username}`);
-        revalidatePath('/admin');
-        return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
-
-    } catch (error) {
-        console.error("Failed to end poll:", error);
-        const errorMessage = error instanceof Error ? error.message : "Impossibile terminare il sondaggio. Si è verificato un errore del server.";
-        return { error: errorMessage };
-    }
-}
+// --- Results Actions ---
 
 export async function getResultsFiles(username: string): Promise<string[]> {
   if (!username) {
