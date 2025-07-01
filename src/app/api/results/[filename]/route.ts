@@ -4,13 +4,13 @@ import path from 'path';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
-const resultsDir = path.join(process.cwd(), 'results');
+const resultsBaseDir = path.join(process.cwd(), 'results');
 
-function getSafeFilePath(filename: string): string | null {
-  const resultsDirResolved = path.resolve(resultsDir);
-  const filePathResolved = path.resolve(resultsDir, filename);
+function getSafeFilePath(filename: string, username: string): string | null {
+  const userResultsDir = path.resolve(resultsBaseDir, username);
+  const filePathResolved = path.resolve(userResultsDir, filename);
 
-  if (!filePathResolved.startsWith(resultsDirResolved) || !filename.endsWith('.json')) {
+  if (!filePathResolved.startsWith(userResultsDir) || !filename.endsWith('.json')) {
     return null;
   }
   return filePathResolved;
@@ -21,12 +21,13 @@ export async function GET(
   { params }: { params: { filename: string } }
 ) {
   const cookieStore = cookies();
-  if (cookieStore.get('auth')?.value !== 'true') {
+  const username = cookieStore.get('username')?.value;
+  if (!username) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
   const { filename } = params;
-  const filePath = getSafeFilePath(filename);
+  const filePath = getSafeFilePath(filename, username);
 
   if (!filePath) {
     return NextResponse.json({ message: 'Invalid filename' }, { status: 400 });
@@ -42,7 +43,7 @@ export async function GET(
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return NextResponse.json({ message: 'File not found' }, { status: 404 });
     }
-    console.error(`Failed to read file ${filename}:`, error);
+    console.error(`Failed to read file ${filename} for user ${username}:`, error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -52,12 +53,13 @@ export async function DELETE(
   { params }: { params: { filename: string } }
 ) {
   const cookieStore = cookies();
-  if (cookieStore.get('auth')?.value !== 'true') {
+  const username = cookieStore.get('username')?.value;
+  if (!username) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { filename } = params;
-  const filePath = getSafeFilePath(filename);
+  const filePath = getSafeFilePath(filename, username);
 
   if (!filePath) {
     return NextResponse.json({ message: 'Invalid filename' }, { status: 400 });
@@ -66,12 +68,13 @@ export async function DELETE(
   try {
     await fs.unlink(filePath);
     revalidatePath('/admin');
+    revalidatePath(`/${username}`);
     return NextResponse.json({ message: 'File deleted successfully' }, { status: 200 });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return NextResponse.json({ message: 'File not found' }, { status: 404 });
     }
-    console.error(`Failed to delete file ${filename}:`, error);
+    console.error(`Failed to delete file ${filename} for user ${username}:`, error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

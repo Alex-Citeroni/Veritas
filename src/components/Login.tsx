@@ -24,10 +24,6 @@ export function Login() {
         if (usernameInput) {
             usernameInput.value = '';
         }
-        const passwordInput = event.currentTarget.elements.namedItem('password') as HTMLInputElement;
-        if (passwordInput) {
-          passwordInput.value = '';
-        }
       }
     });
   };
@@ -39,10 +35,10 @@ export function Login() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl flex items-center justify-center gap-2">
               <KeyRound className="h-6 w-6" />
-              Accesso Admin
+              Accesso Utente
             </CardTitle>
             <CardDescription>
-              Inserisci username e password per gestire i sondaggi.
+              Inserisci il tuo username per creare e gestire i tuoi sondaggi.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -57,17 +53,6 @@ export function Login() {
                 autoComplete="username"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                disabled={isPending}
-                autoComplete="current-password"
-              />
-            </div>
             {error && (
               <p className="text-sm font-medium text-destructive">{error}</p>
             )}
@@ -75,7 +60,7 @@ export function Login() {
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Accedi
+              Accedi o Registrati
             </Button>
           </CardFooter>
         </form>

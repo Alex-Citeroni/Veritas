@@ -13,9 +13,9 @@ import { Separator } from '@/components/ui/separator';
 
 export default async function AdminPage() {
   const cookieStore = cookies();
-  const isAuthenticated = cookieStore.get('auth')?.value === 'true';
+  const username = cookieStore.get('username')?.value;
 
-  if (!isAuthenticated) {
+  if (!username) {
     return <Login />;
   }
 
@@ -26,15 +26,17 @@ export default async function AdminPage() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-4 sm:p-6 lg:p-8">
       <header className="w-full max-w-3xl flex justify-between items-center mb-8">
-         <h1 className="text-2xl font-bold">Pannello Admin</h1>
+         <h1 className="text-2xl font-bold">Pannello Admin ({username})</h1>
         <div className="flex items-center gap-2">
-            <Button asChild variant="outline">
-              <Link href="/">
-                <Eye className="mr-2 h-4 w-4" />
-                Vedi Sondaggio
-              </Link>
-            </Button>
-            <ShareLinkButton />
+            {hasActivePoll && (
+              <Button asChild variant="outline">
+                <Link href={`/${username}`}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Vedi Sondaggio
+                </Link>
+              </Button>
+            )}
+            <ShareLinkButton username={username} disabled={!hasActivePoll} />
             <LogoutButton />
         </div>
       </header>

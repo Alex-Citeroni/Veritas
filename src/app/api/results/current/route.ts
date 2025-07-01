@@ -4,9 +4,9 @@ import { getPoll } from '@/lib/actions';
 
 export async function GET(request: Request) {
   const cookieStore = cookies();
-  const isAuthenticated = cookieStore.get('auth')?.value === 'true';
+  const username = cookieStore.get('username')?.value;
 
-  if (!isAuthenticated) {
+  if (!username) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
 
     const results = {
       title: poll.title,
+      owner: poll.owner,
       generatedAt: new Date().toISOString(),
       questions: poll.questions.map(q => ({
         question: q.text,

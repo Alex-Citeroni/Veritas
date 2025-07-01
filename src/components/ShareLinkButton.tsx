@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Share2 } from 'lucide-react';
 
-export function ShareLinkButton() {
+export function ShareLinkButton({ username, disabled }: { username: string, disabled?: boolean }) {
   const { toast } = useToast();
 
   const handleCopyLink = () => {
-    const url = window.location.origin;
+    const url = `${window.location.origin}/${username}`;
     navigator.clipboard.writeText(url).then(() => {
       toast({
         title: 'Link Copiato!',
@@ -26,7 +26,7 @@ export function ShareLinkButton() {
   };
 
   return (
-    <Button onClick={handleCopyLink} variant="outline">
+    <Button onClick={handleCopyLink} variant="outline" disabled={disabled}>
       <Share2 className="mr-2 h-4 w-4" />
       Condividi Sondaggio
     </Button>

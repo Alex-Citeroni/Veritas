@@ -52,44 +52,30 @@ function PollQuestion({
                     const isUserChoice = answer.id === votedAnswerId;
                     return (
                         <div key={answer.id} className="relative w-full h-12 rounded-md bg-secondary overflow-hidden border border-border">
-                            {isUserChoice ? (
-                                <>
-                                    <div
-                                        className="absolute top-0 left-0 h-full bg-accent transition-all duration-500 ease-out"
-                                        style={{ width: `${percentage}%` }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-5 w-5 text-primary" />
-                                            <span>{answer.text}</span>
-                                        </div>
-                                        <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                            <div
+                                className={`absolute top-0 left-0 h-full transition-all duration-500 ease-out ${isUserChoice ? 'bg-accent' : 'bg-primary/20'}`}
+                                style={{ width: `${percentage}%` }}
+                            />
+                            <div 
+                                className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary"
+                            >
+                                <div className="flex items-center gap-2">
+                                     <CheckCircle className={`h-5 w-5 ${isUserChoice ? 'text-primary' : 'text-transparent'}`} />
+                                    <span>{answer.text}</span>
+                                </div>
+                                <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                            </div>
+                             {isUserChoice && (
+                                <div
+                                    className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
+                                    style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle className="h-5 w-5 text-primary-foreground" />
+                                        <span>{answer.text}</span>
                                     </div>
-                                    <div
-                                        className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary-foreground"
-                                        style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-5 w-5 text-primary-foreground" />
-                                            <span>{answer.text}</span>
-                                        </div>
-                                        <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div
-                                        className="absolute top-0 left-0 h-full bg-primary/20 transition-all duration-500 ease-out"
-                                        style={{ width: `${percentage}%` }}
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-between px-4 font-medium text-primary">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle className="h-5 w-5 text-transparent" />
-                                            <span>{answer.text}</span>
-                                        </div>
-                                        <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
-                                    </div>
-                                </>
+                                    <span>{answer.votes} ({percentage.toFixed(0)}%)</span>
+                                </div>
                             )}
                         </div>
                     );
@@ -116,8 +102,8 @@ function PollQuestion({
 }
 
 
-export function PollVoter() {
-  const [poll, setPoll] = useState<Poll | null>(null);
+export function PollVoter({ initialPoll, username }: { initialPoll: Poll, username: string }) {
+  const [poll, setPoll] = useState<Poll | null>(initialPoll);
   const [votedAnswers, setVotedAnswers] = useState<Record<number, number>>({});
   const [isVoting, startVoting] = useTransition();
   const { toast } = useToast();
@@ -125,7 +111,7 @@ export function PollVoter() {
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const currentPoll = await getPoll();
+        const currentPoll = await getPoll(username);
         setPoll(currentPoll);
       } catch (error) {
         console.error("Failed to fetch poll:", error);
@@ -136,7 +122,7 @@ export function PollVoter() {
     const interval = setInterval(fetchPoll, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [username]);
   
   useEffect(() => {
     if (poll?.id) {
@@ -145,13 +131,15 @@ export function PollVoter() {
             if (storedVotesRaw) {
                 const storedVotes = JSON.parse(storedVotesRaw);
                 const validatedVotes: Record<number, number> = {};
-                for (const question of poll.questions) {
-                    if (storedVotes[question.id] !== undefined) {
-                        const answerExists = question.answers.some(a => a.id === storedVotes[question.id]);
-                        if (answerExists) {
-                            validatedVotes[question.id] = storedVotes[question.id];
-                        }
-                    }
+                if (poll.questions) {
+                  for (const question of poll.questions) {
+                      if (storedVotes[question.id] !== undefined) {
+                          const answerExists = question.answers.some(a => a.id === storedVotes[question.id]);
+                          if (answerExists) {
+                              validatedVotes[question.id] = storedVotes[question.id];
+                          }
+                      }
+                  }
                 }
                 setVotedAnswers(validatedVotes);
             } else {
@@ -170,7 +158,7 @@ export function PollVoter() {
     if (!poll?.id) return;
 
     startVoting(async () => {
-      await submitVote(questionId, answerId);
+      await submitVote(questionId, answerId, username);
       const newVotedAnswers = { ...votedAnswers, [questionId]: answerId };
       try {
         localStorage.setItem(`voted_${poll.id}`, JSON.stringify(newVotedAnswers));
@@ -212,7 +200,7 @@ export function PollVoter() {
             <ShieldCheck className="w-16 h-16 text-primary" />
             <h1 className="text-6xl font-bold text-primary">Veritas</h1>
         </div>
-        <p className="text-xl text-muted-foreground">Sondaggi interattivi per la verità.</p>
+        <p className="text-xl text-muted-foreground">L'utente <span className="font-bold text-primary">{username}</span> non ha un sondaggio attivo.</p>
       </div>
     );
   }
