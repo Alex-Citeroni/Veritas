@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useTransition, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,7 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const [authState, formAction] = useFormState(authenticateAction, null);
+  const [authState, formAction] = useActionState(authenticateAction, null);
 
   const handleUsernameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
