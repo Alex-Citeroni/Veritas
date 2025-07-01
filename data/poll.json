@@ -1,4 +1,5 @@
 {
+  "id": "52e17f7f-5ce6-40ea-a8ef-bedbed098ca4",
   "title": "Prova",
   "questions": [
     {
@@ -8,12 +9,12 @@
         {
           "id": 0,
           "text": "Si",
-          "votes": 0
+          "votes": 1
         },
         {
           "id": 1,
           "text": "No",
-          "votes": 0
+          "votes": 1
         }
       ]
     }

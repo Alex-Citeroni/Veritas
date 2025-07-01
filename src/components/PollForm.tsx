@@ -1,10 +1,10 @@
 'use client';
 
 import { useTransition } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Trash2, Loader2, Send, FilePlus2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Send, FilePlus2, GripVertical } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const pollFormSchema = z.object({
   title: z.string().min(3, 'Il titolo deve contenere almeno 3 caratteri.'),
@@ -41,31 +58,51 @@ interface PollFormProps {
   currentPoll: Poll;
 }
 
-function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: any, questionIndex: number, isSubmitting: boolean }) {
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: `questions.${questionIndex}.answers`,
-  });
+interface SortableAnswerProps {
+    control: Control<PollFormValues>;
+    questionIndex: number;
+    answerIndex: number;
+    field: Record<"id", string>;
+    remove: (index: number) => void;
+    isSubmitting: boolean;
+    totalAnswers: number;
+}
+
+function SortableAnswer({ control, questionIndex, answerIndex, field, remove, isSubmitting, totalAnswers }: SortableAnswerProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: field.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+  };
 
   return (
-    <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-      <FormLabel>Risposte per la Domanda {questionIndex + 1}</FormLabel>
-      {fields.map((field, index) => (
-        <FormField
-          key={field.id}
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2 bg-background rounded-md">
+       <div {...attributes} {...listeners} className="p-2 cursor-grab touch-none" aria-label="Riordina risposta">
+         <GripVertical className="h-5 w-5 text-muted-foreground" />
+       </div>
+       <FormField
           control={control}
-          name={`questions.${questionIndex}.answers.${index}.text`}
-          render={({ field }) => (
-            <FormItem>
+          name={`questions.${questionIndex}.answers.${answerIndex}.text`}
+          render={({ field: formField }) => (
+            <FormItem className="flex-grow">
               <FormControl>
                 <div className="flex items-center gap-2">
-                  <Input placeholder={`Opzione di risposta ${index + 1}`} {...field} />
+                  <Input placeholder={`Opzione di risposta ${answerIndex + 1}`} {...formField} />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => remove(index)}
-                    disabled={fields.length <= 2 || isSubmitting}
+                    onClick={() => remove(answerIndex)}
+                    disabled={totalAnswers <= 2 || isSubmitting}
                     aria-label="Rimuovi risposta"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -76,7 +113,62 @@ function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: 
             </FormItem>
           )}
         />
-      ))}
+    </div>
+  )
+}
+
+
+function AnswersFieldArray({ control, questionIndex, isSubmitting }: { control: Control<PollFormValues>, questionIndex: number, isSubmitting: boolean }) {
+  const { fields, append, remove, move } = useFieldArray({
+    control,
+    name: `questions.${questionIndex}.answers`,
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+        activationConstraint: {
+          distance: 8,
+        },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((item) => item.id === active.id);
+      const newIndex = fields.findIndex((item) => item.id === over.id);
+      move(oldIndex, newIndex);
+    }
+  }
+
+  return (
+    <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+      <FormLabel>Risposte per la Domanda {questionIndex + 1}</FormLabel>
+       <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {fields.map((field, index) => (
+                <SortableAnswer
+                    key={field.id}
+                    field={field}
+                    control={control}
+                    questionIndex={questionIndex}
+                    answerIndex={index}
+                    remove={remove}
+                    isSubmitting={isSubmitting}
+                    totalAnswers={fields.length}
+                />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       <Button
         type="button"
         variant="outline"

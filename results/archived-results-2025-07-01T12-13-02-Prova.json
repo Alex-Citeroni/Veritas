@@ -1,0 +1,21 @@
+{
+  "title": "Prova",
+  "timestamp": "2025-07-01T12:13:02.844Z",
+  "status": "updated",
+  "questions": [
+    {
+      "question": "Ecco una bellissima domanda",
+      "results": [
+        {
+          "text": "Si",
+          "votes": 0
+        },
+        {
+          "text": "No",
+          "votes": 0
+        }
+      ],
+      "totalVotes": 0
+    }
+  ]
+}
