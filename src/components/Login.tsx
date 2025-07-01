@@ -17,6 +17,7 @@ export function Login() {
   const [step, setStep] = useState<LoginStep>('enter-username');
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleUsernameSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -61,7 +62,7 @@ export function Login() {
       if (result?.error) {
         setError(result.error);
       } else if (result?.success) {
-        router.push('/admin');
+        router.refresh();
       }
     });
   };
@@ -70,6 +71,8 @@ export function Login() {
     setError(null);
     setUsername('');
     setStep('enter-username');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   if (step === 'login-password' || step === 'register-password') {
@@ -117,7 +120,7 @@ export function Login() {
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
-                      type={showPassword ? "text" : "password"}
+                      type={showConfirmPassword ? "text" : "password"}
                       required
                       disabled={isPending}
                       autoComplete="new-password"
@@ -128,11 +131,11 @@ export function Login() {
                         variant="ghost"
                         size="icon"
                         className="absolute bottom-1 right-1 h-7 w-7 text-muted-foreground hover:bg-transparent"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        aria-label={showPassword ? "Nascondi password" : "Mostra password"}
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        aria-label={showConfirmPassword ? "Nascondi password" : "Mostra password"}
                         tabIndex={-1}
                     >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                 </div>
               )}
