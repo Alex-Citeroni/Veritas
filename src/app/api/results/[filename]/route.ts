@@ -9,7 +9,7 @@ function getSafeFilePath(filename: string, username: string): string | null {
   const userResultsDir = path.resolve(resultsBaseDir, username);
   const filePathResolved = path.resolve(userResultsDir, filename);
 
-  if (!filePathResolved.startsWith(userResultsDir) || !filename.endsWith('.json')) {
+  if (!filePathResolved.startsWith(userResultsDir) || !filename.endsWith('.md')) {
     return null;
   }
   return filePathResolved;
@@ -35,7 +35,7 @@ export async function GET(
   try {
     const fileContent = await fs.readFile(filePath, 'utf-8');
     const headers = new Headers();
-    headers.set('Content-Type', 'application/json');
+    headers.set('Content-Type', 'text/markdown; charset=utf-8');
     headers.set('Content-Disposition', `attachment; filename="${filename}"`);
     return new NextResponse(fileContent, { status: 200, headers });
   } catch (error) {

@@ -90,25 +90,32 @@ async function archivePollResults(poll: Poll, reason: 'updated' | 'ended'): Prom
     await ensureDir(userResultsDir);
     const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
     
-    // Use poll ID for a unique, safe filename
-    const resultFileName = `${poll.id}-${reason}-${timestamp}.json`;
+    // Use poll ID for a unique, safe filename with .md extension
+    const resultFileName = `${poll.id}-${reason}-${timestamp}.md`;
     const resultFilePath = path.join(userResultsDir, resultFileName);
 
-    const results = {
-        pollId: poll.id,
-        title: poll.title,
-        owner: poll.owner,
-        timestamp: new Date().toISOString(),
-        status: reason,
-        questions: poll.questions.map(q => ({
-            question: q.text,
-            results: q.answers.map(({ text, votes }) => ({ text, votes })),
-            totalVotes: q.answers.reduce((sum, a) => sum + a.votes, 0)
-        }))
-    };
+    const now = new Date();
+    let fileContent = `# Risultati Sondaggio: ${poll.title}\n\n`;
+    fileContent += `- **Proprietario**: ${poll.owner}\n`;
+    fileContent += `- **Stato**: ${reason === 'ended' ? 'Terminato' : 'Archiviato'}\n`;
+    fileContent += `- **Generato il**: ${now.toLocaleString('it-IT')}\n`;
+    fileContent += `- **ID Sondaggio**: ${poll.id}\n\n`;
+    
+    poll.questions.forEach((q, index) => {
+        const totalVotes = q.answers.reduce((sum, a) => sum + a.votes, 0);
+        fileContent += '---\n\n';
+        fileContent += `## Domanda ${index + 1}: ${q.text}\n\n`;
+        fileContent += `*(Voti totali: ${totalVotes})*\n\n`;
+        
+        q.answers.forEach(a => {
+            const percentage = totalVotes > 0 ? ((a.votes / totalVotes) * 100).toFixed(1) : "0.0";
+            fileContent += `- ${a.text}: **${a.votes}** voti (${percentage}%)\n`;
+        });
+        fileContent += '\n';
+    });
 
     try {
-        await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
+        await fs.writeFile(resultFilePath, fileContent, 'utf-8');
         return resultFileName;
     } catch (error) {
         console.error(`Failed to archive results for poll "${poll.title}":`, error);
@@ -258,7 +265,7 @@ export async function savePoll(
                 id: randomUUID(),
                 title,
                 owner: username,
-                isActive: isFirstPoll, // New polls are not active by default, unless it's the first one.
+                isActive: isFirstPoll, // New polls are active by default, if it's the first one.
                 questions: questions.map((q, qIndex) => ({
                     id: qIndex,
                     text: q.text,
@@ -318,6 +325,8 @@ export async function activatePoll(pollId: string, username: string): Promise<{ 
             if (p.id === pollId) {
                 targetPoll = p;
             } else if (p.isActive) {
+                // Archive previous active poll before deactivating
+                await archivePollResults(p, 'ended');
                 p.isActive = false;
                 await writePollFile(getPollFilePath(username, p.id), p);
             }
@@ -406,7 +415,7 @@ export async function getResultsFiles(username: string): Promise<string[]> {
   await ensureDir(userResultsDir);
   try {
     const files = await fs.readdir(userResultsDir);
-    return files.filter(file => file.endsWith('.json')).sort((a, b) => b.localeCompare(a));
+    return files.filter(file => file.endsWith('.md')).sort((a, b) => b.localeCompare(a));
   } catch (error) {
     console.error("Failed to read results directory:", error);
     return [];
