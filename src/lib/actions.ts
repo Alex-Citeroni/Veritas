@@ -32,12 +32,16 @@ async function getPollData(): Promise<Poll> {
   await ensurePollFile();
   try {
     const pollData = await fs.readFile(pollFilePath, 'utf-8');
+     if (!pollData.trim()) {
+        return { title: null, questions: [] };
+    }
     const parsedData = JSON.parse(pollData);
     if ('question' in parsedData) {
         return { title: null, questions: [] };
     }
     return parsedData;
   } catch (error) {
+    console.error("Error reading or parsing poll data:", error);
     return { title: null, questions: [] };
   }
 }
@@ -93,7 +97,12 @@ export async function createPoll(data: { title: string; questions: { text: strin
     })),
   };
 
-  await writePollData(newPoll);
+  try {
+    await writePollData(newPoll);
+  } catch (error) {
+    console.error("Failed to write poll data:", error);
+    return { error: "Impossibile salvare il sondaggio. Si è verificato un errore del server." };
+  }
 
   revalidatePath('/');
   revalidatePath('/admin');
@@ -114,7 +123,12 @@ export async function submitVote(questionId: number, answerId: number) {
   const answer = question.answers.find(a => a.id === answerId);
   if (answer) {
     answer.votes += 1;
-    await writePollData(poll);
+    try {
+        await writePollData(poll);
+    } catch (error) {
+        console.error("Failed to write poll data on vote:", error);
+        return { error: "Impossibile salvare il voto. Si è verificato un errore del server." };
+    }
     revalidatePath('/');
     return { success: 'Voto inviato!' };
   }
@@ -139,10 +153,14 @@ export async function endPoll() {
     }))
   };
 
-  await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
+  try {
+    await fs.writeFile(resultFilePath, JSON.stringify(results, null, 2), 'utf-8');
+    await writePollData({ title: null, questions: [] });
+  } catch (error) {
+    console.error("Failed to write results or clear poll:", error);
+    return { error: "Impossibile terminare il sondaggio. Si è verificato un errore del server." };
+  }
   
-  await writePollData({ title: null, questions: [] });
-
   revalidatePath('/');
   revalidatePath('/admin');
   return { success: `Sondaggio terminato e risultati salvati in ${resultFileName}` };
