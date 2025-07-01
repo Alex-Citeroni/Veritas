@@ -12,19 +12,17 @@ export default async function UserPollPage({ params }: { params: { username: str
   return (
     <div className="flex flex-col h-screen bg-muted/40">
        <header className="flex-shrink-0 bg-background border-b z-10 shadow-sm">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                        <ShieldCheck className="h-6 w-6" />
-                        <span>Veritas</span>
-                    </Link>
-                    <Button asChild variant="outline">
-                      <Link href="/admin">
-                        <UserCog className="mr-2 h-4 w-4" />
-                        Pannello Admin
-                      </Link>
-                    </Button>
-                </div>
+            <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
+                <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
+                    <ShieldCheck className="h-6 w-6" />
+                    <span>Veritas</span>
+                </Link>
+                <Button asChild variant="outline">
+                  <Link href="/admin">
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Pannello Admin
+                  </Link>
+                </Button>
             </div>
         </header>
       <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 pb-16 flex justify-center">
