@@ -19,5 +19,6 @@ export const config = {
     '/backup.sql',
     '/config/:path*',
     '/config.json',
+    '/docker-compose.yml',
   ],
 };
