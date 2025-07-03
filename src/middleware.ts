@@ -18,5 +18,6 @@ export const config = {
     '/wordpress/:path*',
     '/backup.sql',
     '/config/:path*',
+    '/config.json',
   ],
 };
