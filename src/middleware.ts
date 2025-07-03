@@ -15,5 +15,6 @@ export const config = {
     '/wp-includes/:path*',
     '/wordpress/:path*',
     '/backup.sql',
+    '/config/:path*',
   ],
 };
