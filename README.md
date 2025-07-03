@@ -1,55 +1,98 @@
 # Veritas
 
-Veritas è un'applicazione web sviluppata con Next.js che permette di creare e gestire sondaggi in tempo reale. Gli utenti registrati possono predisporre le domande, condividere il link di voto e visualizzare i risultati man mano che arrivano.
+Veritas è un'applicazione web sviluppata con Next.js che permette di creare e gestire sondaggi interattivi in tempo reale.
 
-## Installazione
+Questa guida è divisa in due sezioni: una per gli **utenti** dell'applicazione e una per gli **sviluppatori** che vogliono eseguirla in locale.
 
-1. Assicurati di avere **Node.js** installato sul tuo sistema.
-2. Installa le dipendenze del progetto:
-   ```bash
-   npm install
-   ```
-3. Avvia l'ambiente di sviluppo:
-   ```bash
-   npm run dev
-   ```
-   L'app sarà disponibile su `http://localhost:3000`.
+---
 
-## Accesso e registrazione
+## Guida per l'Utente
 
-- Visita la pagina principale e clicca su **"Accedi e crea un sondaggio"**.
-- Inserisci uno username: se esiste verrà richiesto di inserire la password, altrimenti potrai crearne una nuova per registrarti.
-- Dopo l'autenticazione accederai al pannello **Admin**.
+Questa sezione descrive come utilizzare Veritas per creare e gestire i tuoi sondaggi.
 
-## Creazione di un sondaggio
+### Accesso e Registrazione
 
-1. Dal pannello Admin premi **"Nuovo"** per aprire il modulo di creazione.
-2. Inserisci il titolo del sondaggio.
-3. Aggiungi almeno una domanda e due risposte per ciascuna domanda.
-4. Salva il sondaggio: il primo sondaggio creato viene impostato automaticamente come attivo.
+1.  Visita la pagina principale e clicca su **"Accedi e crea un sondaggio"**.
+2.  Inserisci il tuo username.
+    *   **Se l'username esiste**, ti verrà richiesta la password per accedere.
+    *   **Se l'username non esiste**, potrai creare una password per registrare un nuovo account.
+3.  Una volta autenticato, verrai reindirizzato al pannello di amministrazione (la tua Dashboard).
 
-## Gestione dei sondaggi
+### La Dashboard Admin
 
-- Nella colonna sinistra del pannello trovi l'elenco dei tuoi sondaggi. Ogni voce può essere attivata, disattivata, modificata o eliminata.
-- Solo un sondaggio alla volta può essere **attivo**. Quando ne attivi uno nuovo, quello precedente viene archiviato.
-- Attraverso il pulsante **"Live"** puoi visualizzare la pagina pubblica del sondaggio attivo oppure condividerne il link con **"Condividi"**.
-- È possibile salvare i risultati correnti cliccando **"Salva Risultati"**: verrà generato un file `.md` nella cartella `results/<username>`.
+La dashboard è il tuo centro di controllo. È divisa in due pannelli:
+*   **A sinistra**: L'elenco di tutti i sondaggi che hai creato.
+*   **A destra**: Il modulo per creare un nuovo sondaggio o modificare uno esistente.
 
-## Pagina pubblica di voto
+Dall'intestazione della dashboard puoi anche accedere alla pagina del tuo profilo per modificare le credenziali.
 
-- Gli utenti accedono all'indirizzo `/<username>` dove `<username>` corrisponde al proprietario del sondaggio.
-- Ogni domanda viene presentata con le relative risposte. Dopo aver votato è possibile vedere in tempo reale l'andamento delle preferenze.
-- Le scelte effettuate vengono memorizzate localmente nel browser per evitare voti multipli sulla stessa domanda.
+### Creazione e Modifica di un Sondaggio
 
-## Struttura dei dati
+*   **Per creare un nuovo sondaggio**: Assicurati di non avere un sondaggio selezionato per la modifica e compila il modulo a destra. Premi **"Nuovo"** in alto a sinistra se il modulo non è visibile.
+*   **Per modificare un sondaggio esistente**: Clicca sul pulsante **"Modifica"** di un sondaggio dall'elenco. Il modulo a destra si popolerà con i dati di quel sondaggio.
 
-- I sondaggi creati sono salvati nella cartella `data/<username>/polls` in formato JSON.
-- I risultati archiviati si trovano in `results/<username>` e possono essere scaricati o eliminati dal pannello Admin.
+Quando compili il modulo:
+1.  Inserisci un **titolo** per il sondaggio.
+2.  Aggiungi almeno una **domanda**.
+3.  Per ogni domanda, aggiungi almeno due **risposte**.
+4.  Puoi riordinare domande e risposte trascinandole.
+5.  Clicca su **"Salva Sondaggio"** (o **"Salva Modifiche"**).
 
-## Tecnologie principali
+_Nota: il primo sondaggio che crei viene impostato automaticamente come attivo._
 
-- [Next.js](https://nextjs.org/) per il front‑end e l'API.
-- [React](https://react.dev/) per la gestione dell'interfaccia.
-- [Tailwind CSS](https://tailwindcss.com/) per lo styling.
+### Gestione dei Sondaggi
+
+Dall'elenco a sinistra, per ogni sondaggio puoi:
+*   **Attivare**: Rende il sondaggio visibile al pubblico per la votazione. Solo un sondaggio può essere attivo alla volta. L'attivazione di un nuovo sondaggio archivia automaticamente i risultati di quello precedentemente attivo.
+*   **Disattivare**: Rimuove il sondaggio dalla pagina pubblica.
+*   **Modificare**: Carica i dati del sondaggio nel modulo di modifica.
+*   **Eliminare**: Rimuove permanentemente il sondaggio e tutti i suoi risultati archiviati.
+
+### Condivisione e Voto
+
+Per il sondaggio **attivo**, puoi:
+*   **Visualizzare la pagina live**: Clicca su **"Live"** per vedere la pagina come la vedranno i votanti.
+*   **Condividere il link**: Clicca su **"Condividi"** per copiare l'URL pubblico del tuo sondaggio (es. `https://tua-app.com/tuo-username`).
+*   **Votazione**: Chiunque abbia il link può votare. I risultati si aggiornano in tempo reale. Gli utenti possono cambiare il loro voto cliccando su una risposta diversa.
+
+### Gestione dei Risultati
+
+*   **Salvataggio**: Per il sondaggio attivo, clicca su **"Salva Risultati"** per creare un'istantanea dei voti correnti. Questo è utile per archiviare i dati prima di disattivare un sondaggio o fare modifiche.
+*   **Download ed Eliminazione**: Ogni sondaggio nell'elenco mostra i suoi risultati archiviati. Da lì puoi scaricare i file dei risultati (in formato Markdown) o eliminarli.
+
+### Gestione del Profilo
+
+Dalla pagina del profilo (accessibile dall'icona utente nella dashboard) puoi:
+*   **Cambiare il tuo username**.
+*   **Cambiare la tua password**.
+
+---
+
+## Guida per lo Sviluppatore
+
+### Installazione
+
+1.  Assicurati di avere **Node.js** installato sul tuo sistema.
+2.  Installa le dipendenze del progetto:
+    ```bash
+    npm install
+    ```
+3.  Avvia l'ambiente di sviluppo:
+    ```bash
+    npm run dev
+    ```
+    L'app sarà disponibile su `http://localhost:3000`.
+
+### Struttura dei Dati
+
+*   **Utenti**: I dati degli utenti (username e hash della password) sono salvati in `data/<username>/user.json`.
+*   **Sondaggi**: I sondaggi creati sono salvati in formato JSON nella cartella `data/<username>/polls`.
+*   **Risultati**: I risultati archiviati si trovano in `results/<username>` in formato Markdown.
+
+### Tecnologie Principali
+
+*   [Next.js](https://nextjs.org/) per il front‑end e l'API.
+*   [React](https://react.dev/) per la gestione dell'interfaccia.
+*   [Tailwind CSS](https://tailwindcss.com/) per lo styling.
 
 Per maggiori dettagli sul codice dai uno sguardo alla cartella `src/`.
