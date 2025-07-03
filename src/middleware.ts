@@ -8,6 +8,7 @@ export const config = {
   matcher: [
     '/.git/:path*',
     '/js/:path*',
+    '/chunks/:path*',
     '/wp-admin/:path*',
     '/wp-login.php',
     '/wp-includes/:path*',
