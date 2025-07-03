@@ -5,5 +5,11 @@ export function middleware(_request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/.git/:path*', '/js/:path*'],
+  matcher: [
+    '/.git/:path*',
+    '/js/:path*',
+    '/wp-admin/:path*',
+    '/wp-login.php',
+    '/wp-includes/:path*',
+  ],
 };
