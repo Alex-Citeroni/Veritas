@@ -113,6 +113,7 @@ function PollQuestion({
 
 export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null, username: string }) {
   const [poll, setPoll] = useState<Poll | null>(initialPoll);
+  const [isLoading, setIsLoading] = useState(true);
   const [votedAnswers, setVotedAnswers] = useState<Record<number, number>>({});
   const [isVoting, startVoting] = useTransition();
   const { toast } = useToast();
@@ -124,6 +125,8 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
         setPoll(currentPoll);
       } catch (error) {
         console.error("Failed to fetch poll:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -218,7 +221,7 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
   }, [poll?.questions])
 
 
-  if (poll === null) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-primary">
         <Loader2 className="h-12 w-12 animate-spin" />
@@ -227,7 +230,7 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
     );
   }
 
-  if (!poll.title) {
+  if (!poll || !poll.title) {
     return (
        <div className="text-center">
         <div className="flex items-center justify-center gap-4 mb-4">
