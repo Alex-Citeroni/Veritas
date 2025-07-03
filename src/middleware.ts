@@ -14,5 +14,6 @@ export const config = {
     '/wp-login.php',
     '/wp-includes/:path*',
     '/wordpress/:path*',
+    '/backup.sql',
   ],
 };
