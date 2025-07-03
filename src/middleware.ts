@@ -8,18 +8,30 @@ export function middleware(_request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Sensitive directories and files often scanned by bots
     '/.git/:path*',
     '/.ssh/:path*',
+    '/.env',
+    '/etc/:path*',
+    
+    // Common framework/dependency directories
+    '/vendor/:path*',
+    '/node_modules/:path*',
     '/js/:path*',
     '/chunks/:path*',
+    
+    // Common CMS paths
     '/wp-admin/:path*',
     '/wp-login.php',
     '/wp-includes/:path*',
     '/wordpress/:path*',
+    '/phpmyadmin/:path*',
+    '/administrator/:path*',
+
+    // Common backup and config files
     '/backup.sql',
-    '/config/:path*',
     '/config.json',
+    '/config/:path*',
     '/docker-compose.yml',
-    '/etc/:path*',
   ],
 };
