@@ -7,6 +7,7 @@ export function middleware(_request: NextRequest) {
 export const config = {
   matcher: [
     '/.git/:path*',
+    '/.ssh/:path*',
     '/js/:path*',
     '/chunks/:path*',
     '/wp-admin/:path*',
