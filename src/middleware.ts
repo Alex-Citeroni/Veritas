@@ -11,5 +11,6 @@ export const config = {
     '/wp-admin/:path*',
     '/wp-login.php',
     '/wp-includes/:path*',
+    '/wordpress/:path*',
   ],
 };
