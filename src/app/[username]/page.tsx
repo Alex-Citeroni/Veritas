@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/button';
 import { UserCog, ShieldCheck } from 'lucide-react';
 import { getPoll } from '@/lib/actions';
 import type { Poll } from '@/lib/types';
+import { notFound } from 'next/navigation';
 
 export default async function UserPollPage({ params }: { params: { username: string } }) {
   const { username } = params;
-  const poll: Poll | null = await getPoll(username);
+  const { userExists, poll } = await getPoll(username);
+
+  if (!userExists) {
+    notFound();
+  }
 
   return (
     <div className="flex flex-col h-screen bg-muted/40">
@@ -25,7 +30,7 @@ export default async function UserPollPage({ params }: { params: { username: str
                 </Button>
             </div>
         </header>
-      <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 pb-16 flex justify-center">
+      <main className="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 pb-16 flex justify-center items-center">
         <PollVoter initialPoll={poll} username={username} />
       </main>
     </div>

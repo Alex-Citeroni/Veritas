@@ -6,7 +6,8 @@ import type { Poll, Question } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, BarChart2, HelpCircle, ShieldCheck, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle, BarChart2, HelpCircle, ShieldCheck, Sparkles, Home } from 'lucide-react';
+import Link from 'next/link';
 
 function PollQuestion({
   question,
@@ -113,7 +114,7 @@ function PollQuestion({
 
 export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null, username: string }) {
   const [poll, setPoll] = useState<Poll | null>(initialPoll);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!initialPoll);
   const [votedAnswers, setVotedAnswers] = useState<Record<number, number>>({});
   const [isVoting, startVoting] = useTransition();
   const { toast } = useToast();
@@ -121,7 +122,7 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
   useEffect(() => {
     const fetchPoll = async () => {
       try {
-        const currentPoll = await getPoll(username);
+        const { poll: currentPoll } = await getPoll(username);
         setPoll(currentPoll);
       } catch (error) {
         console.error("Failed to fetch poll:", error);
@@ -130,11 +131,14 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
       }
     };
 
-    fetchPoll();
     const interval = setInterval(fetchPoll, 3000);
+    // Initial fetch if needed
+    if (!initialPoll) {
+        fetchPoll();
+    }
 
     return () => clearInterval(interval);
-  }, [username]);
+  }, [username, initialPoll]);
   
   useEffect(() => {
     if (poll?.id) {
@@ -233,11 +237,17 @@ export function PollVoter({ initialPoll, username }: { initialPoll: Poll | null,
   if (!poll || !poll.title) {
     return (
        <div className="text-center">
-        <div className="flex items-center justify-center gap-4 mb-4">
-            <ShieldCheck className="w-16 h-16 text-primary" />
-            <h1 className="text-6xl font-bold text-primary">Veritas</h1>
-        </div>
-        <p className="text-xl text-muted-foreground">L'utente <span className="font-bold text-primary">{username}</span> non ha un sondaggio attivo.</p>
+            <div className="flex items-center justify-center gap-4 mb-4">
+                <ShieldCheck className="w-16 h-16 text-primary" />
+                <h1 className="text-6xl font-bold text-primary">Veritas</h1>
+            </div>
+            <p className="text-xl text-muted-foreground max-w-lg mb-8">L'utente <span className="font-bold text-primary">{username}</span> non ha un sondaggio attivo al momento.</p>
+            <Button asChild size="lg">
+                <Link href="/">
+                    <Home className="mr-2 h-5 w-5" />
+                    Torna alla Home
+                </Link>
+            </Button>
       </div>
     );
   }

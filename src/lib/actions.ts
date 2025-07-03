@@ -391,21 +391,27 @@ export async function deactivatePoll(pollId: string, username: string): Promise<
 
 // --- Voting Page Actions ---
 
-export async function getPoll(username: string): Promise<Poll | null> {
+export async function getPoll(username: string): Promise<{ userExists: boolean; poll: Poll | null }> {
     try {
-      const allPolls = await listPolls(username);
-      const activePoll = allPolls.find(p => p.isActive) || null;
-      return activePoll;
+        const userFilePath = getUserFilePath(username);
+        await fs.access(userFilePath); // Check if user.json exists
+        
+        // User exists, now look for the poll.
+        const allPolls = await listPolls(username);
+        const activePoll = allPolls.find(p => p.isActive) || null;
+        return { userExists: true, poll: activePoll };
     } catch (error) {
-      console.error(`Error getting poll for user ${username}:`, error);
-      // Return a "no poll" state instead of throwing
-      return null;
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return { userExists: false, poll: null }; // User does not exist
+        }
+        console.error(`Error getting poll for user ${username}:`, error);
+        return { userExists: false, poll: null }; // Treat other errors as user not found for safety
     }
 }
 
 
 export async function submitVote(questionId: number, newAnswerId: number, oldAnswerId: number | null, username: string) {
-  const poll = await getPoll(username);
+  const { poll } = await getPoll(username);
   if (!poll?.id) return { error: 'Nessun sondaggio attivo.' };
 
   const question = poll.questions.find(q => q.id === questionId);
@@ -455,7 +461,7 @@ export async function getResultsFiles(username: string): Promise<string[]> {
 
 export async function archiveCurrentPollResults(username: string): Promise<{ success: boolean; error?: string; filename?: string }> {
     try {
-        const poll = await getPoll(username);
+        const { poll } = await getPoll(username);
         if (!poll) {
             return { success: false, error: 'Nessun sondaggio attivo da archiviare.' };
         }
