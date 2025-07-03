@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 export function middleware(_request: NextRequest) {
-  return new NextResponse(null, { status: 404, statusText: 'Not Found' });
+  // Return a 204 No Content response. This is a success status,
+  // so it shouldn't be logged as a warning, but it sends no body.
+  return new NextResponse(null, { status: 204 });
 }
 
 export const config = {
