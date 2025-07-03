@@ -5,5 +5,5 @@ export function middleware(_request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/.git/:path*',
+  matcher: ['/.git/:path*', '/js/:path*'],
 };
