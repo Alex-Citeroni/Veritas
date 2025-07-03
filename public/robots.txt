@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /.git/
+Disallow: /wp-admin/
+Disallow: /wp-login.php
+Disallow: /wp-includes/
+Disallow: /wordpress/
+Disallow: /js/
+Disallow: /chunks/
