@@ -8,20 +8,17 @@ export function middleware(_request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Sensitive directories and files often scanned by bots
+    // --- Block common sensitive directories
     '/.git/:path*',
     '/.ssh/:path*',
-    '/.env',
-    '/:path+/.env', // Catches .env in subdirectories like /backend/.env
     '/etc/:path*',
-    
-    // Common framework/dependency directories
     '/vendor/:path*',
     '/node_modules/:path*',
-    '/js/:path*',
-    '/chunks/:path*',
+    '/config/:path*',
+    '/docker/:path*',
+    '/compose/:path*',
     
-    // Common CMS paths
+    // --- Block common CMS / admin tool paths
     '/wp-admin/:path*',
     '/wp-login.php',
     '/wp-includes/:path*',
@@ -29,17 +26,19 @@ export const config = {
     '/phpmyadmin/:path*',
     '/administrator/:path*',
 
-    // Common backup and config files
-    '/backup.sql',
-    '/config.json',
-    '/config/:path*',
-    '/docker-compose.yml',
-    '/docker-compose.yaml',
-    '/.docker-compose.yml',
-    '/.docker-compose.yaml',
-    '/docker-compose.override.yml',
-    '/docker-compose.override.yaml',
-    '/docker/:path*',
-    '/compose/:path*',
+    // --- Block common sensitive file names at any depth (root or subdirectories)
+    '/:path*/.env',
+    '/:path*/backup.sql',
+    '/:path*/config.json',
+    '/:path*/docker-compose.yml',
+    '/:path*/docker-compose.yaml',
+    '/:path*/.docker-compose.yml',
+    '/:path*/.docker-compose.yaml',
+    '/:path*/docker-compose.override.yml',
+    '/:path*/docker-compose.override.yaml',
+    
+    // --- Block common framework folders that bots scan for
+    '/js/:path*',
+    '/chunks/:path*',
   ],
 };
