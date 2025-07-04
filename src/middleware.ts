@@ -37,6 +37,8 @@ export const config = {
     '/docker-compose.yaml',
     '/.docker-compose.yml',
     '/.docker-compose.yaml',
+    '/docker-compose.override.yml',
+    '/docker-compose.override.yaml',
     '/docker/:path*',
     '/compose/:path*',
   ],
