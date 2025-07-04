@@ -34,7 +34,7 @@ export const config = {
     '/config/:path*',
     '/docker-compose.yml',
     '/docker-compose.yaml',
-    '/compose/:path*',
     '/docker/:path*',
+    '/compose/:path*',
   ],
 };
