@@ -12,6 +12,7 @@ export const config = {
     '/.git/:path*',
     '/.ssh/:path*',
     '/.env',
+    '/:path+/.env', // Catches .env in subdirectories like /backend/.env
     '/etc/:path*',
     
     // Common framework/dependency directories
